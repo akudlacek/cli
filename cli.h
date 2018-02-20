@@ -17,7 +17,7 @@
 ******************************************************************************/
 #define MAX_NUM_COMMANDS 25 //Max number of commands that can be entered
 #define MAX_NUM_TOKENS 2    //Defines the number of tokens involved in a command ***DO NOT CHANGE***
-#define MAX_LEN_TOKENS 20   //Max length of each token, should be greater than largest key word or argument
+#define MAX_LEN_TOKENS 10   //Max length of each token, should be greater than largest key word or argument
 #define MAX_NUM_STRN_ARG 2  //How many different possible string arguments
 #define CMD_DELIMITER " "   //Delimiter for tokens
 

@@ -77,18 +77,22 @@ void cli_add_command(char *cmd_name, cli_argument_type_t arg_type, void (*comman
 	//NULL check
 	if(cmd_name != NULL || command_fptr != NULL)
 	{
-		//Point command list to memory allocated for command
-		cli.cmd_list[cli.num_cmds_added] = (cli_command_t *)malloc(sizeof(cli_command_t));
-	
-		//Load command configuration
-		strncpy(cli.cmd_list[cli.num_cmds_added]->command_name, cmd_name, MAX_LEN_TOKENS - 1);          //add command name (this will be what you type to use a command)
-		cli.cmd_list[cli.num_cmds_added]->argument_type = arg_type;                //this is the command argument (NONE just calls the function you put in below)
-		strncpy(cli.cmd_list[cli.num_cmds_added]->string_arguments[0], str_arg_0, MAX_LEN_TOKENS - 1);  //add string arg if used
-		strncpy(cli.cmd_list[cli.num_cmds_added]->string_arguments[1], str_arg_1, MAX_LEN_TOKENS - 1);  //add string arg if used
-		cli.cmd_list[cli.num_cmds_added]->command_fptr = command_fptr;             //points command to your function
-	
-		//Increment the number of commands
-		cli.num_cmds_added++;
+		//Number of command check
+		if(cli.num_cmds_added < MAX_NUM_COMMANDS)
+		{
+			//Point command list to memory allocated for command
+			cli.cmd_list[cli.num_cmds_added] = (cli_command_t *)malloc(sizeof(cli_command_t));
+			
+			//Load command configuration
+			strncpy(cli.cmd_list[cli.num_cmds_added]->command_name, cmd_name, MAX_LEN_TOKENS - 1);          //add command name (this will be what you type to use a command)
+			cli.cmd_list[cli.num_cmds_added]->argument_type = arg_type;                //this is the command argument (NONE just calls the function you put in below)
+			strncpy(cli.cmd_list[cli.num_cmds_added]->string_arguments[0], str_arg_0, MAX_LEN_TOKENS - 1);  //add string arg if used
+			strncpy(cli.cmd_list[cli.num_cmds_added]->string_arguments[1], str_arg_1, MAX_LEN_TOKENS - 1);  //add string arg if used
+			cli.cmd_list[cli.num_cmds_added]->command_fptr = command_fptr;             //points command to your function
+			
+			//Increment the number of commands
+			cli.num_cmds_added++;
+		}
 	}
 }
 
