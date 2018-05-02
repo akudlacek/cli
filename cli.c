@@ -16,6 +16,10 @@
 /******************************************************************************
 * Defines
 ******************************************************************************/
+#define MAX_NUM_TOKENS 2                                //Defines the number of tokens involved in a command ***DO NOT CHANGE***
+#define BUFFER_LEN (MAX_NUM_TOKENS * MAX_LEN_TOKENS)    //Size for buffer that accumulates the command and argument
+#define CLI_LOC_STRN_SIZE_BYTES (MAX_LEN_TOKENS * 2)
+
 //only used for local_token_array
 enum
 {
@@ -37,10 +41,8 @@ struct
 	char *token;
 	uint8_t token_ind;
 	uint8_t cmd_ind;
-	uint8_t arg_ind;
 	uint8_t cmd_found_flag;
-	uint8_t arg_found_flag;
-	char strn[MAX_LEN_TOKENS];
+	char strn[CLI_LOC_STRN_SIZE_BYTES];
 	char token_arr[MAX_NUM_TOKENS][MAX_LEN_TOKENS];
 	
 	cli_config_t conf;
@@ -52,7 +54,7 @@ struct
 /******************************************************************************
 * Local Prototypes
 ******************************************************************************/
-static void help_command(char * str, int32_t num);
+static void help_command(uint32_t cmd_num, char *arg_str);
 
 
 /******************************************************************************
@@ -70,9 +72,9 @@ void cli_init(int16_t (*rx_byte_fptr)(void), void (*tx_string_fprt)(char*))
 /******************************************************************************
 *  \brief Add CLI Command
 *
-*  \note
+*  \note if parameters passed are incorrect this function will just not add it
 ******************************************************************************/
-void cli_add_command(char *cmd_name, cli_argument_type_t arg_type, void (*command_fptr)(char *, int32_t), char *str_arg_0, char *str_arg_1)
+void cli_add_command(char *cmd_name, void (*command_fptr)(uint32_t, char *))
 {
 	//NULL check
 	if(cmd_name != NULL || command_fptr != NULL)
@@ -84,11 +86,8 @@ void cli_add_command(char *cmd_name, cli_argument_type_t arg_type, void (*comman
 			cli.cmd_list[cli.num_cmds_added] = (cli_command_t *)malloc(sizeof(cli_command_t));
 			
 			//Load command configuration
-			strncpy(cli.cmd_list[cli.num_cmds_added]->command_name, cmd_name, MAX_LEN_TOKENS - 1);          //add command name (this will be what you type to use a command)
-			cli.cmd_list[cli.num_cmds_added]->argument_type = arg_type;                //this is the command argument (NONE just calls the function you put in below)
-			strncpy(cli.cmd_list[cli.num_cmds_added]->string_arguments[0], str_arg_0, MAX_LEN_TOKENS - 1);  //add string arg if used
-			strncpy(cli.cmd_list[cli.num_cmds_added]->string_arguments[1], str_arg_1, MAX_LEN_TOKENS - 1);  //add string arg if used
-			cli.cmd_list[cli.num_cmds_added]->command_fptr = command_fptr;             //points command to your function
+			strncpy(cli.cmd_list[cli.num_cmds_added]->command_name, cmd_name, MAX_LEN_TOKENS - 1);  //add command name (this will be what you type to use a command)
+			cli.cmd_list[cli.num_cmds_added]->command_fptr = command_fptr;                          //points command to your function
 			
 			//Increment the number of commands
 			cli.num_cmds_added++;
@@ -103,10 +102,9 @@ void cli_add_command(char *cmd_name, cli_argument_type_t arg_type, void (*comman
 ******************************************************************************/
 void cli_task(void)
 {
-	cli.rx_byte = -1;
-	cli.token = 0;
-	cli.cmd_found_flag = 0;
-	cli.arg_found_flag = 0;
+	cli.rx_byte        = -1;
+	cli.token           = 0;
+	cli.cmd_found_flag  = 0;
 
 	//grab from received buffer
 	cli.rx_byte = cli.conf.rx_byte_fptr();
@@ -167,12 +165,15 @@ void cli_task(void)
 		{
 			//print new line
 			cli.conf.tx_string_fprt("\r\n");
-
-			//get first token
-			cli.token = strtok(cli.buffer, CMD_DELIMITER);
 			
 			//clear token index
 			cli.token_ind = 0;
+			
+			//clear token array
+			memset(cli.token_arr, 0, sizeof(cli.token_arr));
+
+			//get first token
+			cli.token = strtok(cli.buffer, CMD_DELIMITER);
 
 			//get tokens from local received buffer and put into local token array
 			while(cli.token != NULL)
@@ -215,44 +216,8 @@ void cli_task(void)
 				//if first entry of local token array matches one of the commands
 				if(!strncmp(&cli.token_arr[COMMAND][0], cli.cmd_list[cli.cmd_ind]->command_name, MAX_LEN_TOKENS))
 				{
-					switch(cli.cmd_list[cli.cmd_ind]->argument_type)
-					{
-						//NOTE: if argument type is NONE then no argument so just set command ready flag
-
-						case STRING:
-						//search for string argument
-						for(cli.arg_ind = 0; cli.arg_ind < MAX_NUM_STRN_ARG; cli.arg_ind++)
-						{
-							//if token string matches an argument
-							if(!strncmp(&cli.token_arr[ARGUMENT][0], cli.cmd_list[cli.cmd_ind]->string_arguments[cli.arg_ind], MAX_LEN_TOKENS))
-							{
-								//run user function
-								cli.cmd_list[cli.cmd_ind]->command_fptr(&cli.token_arr[ARGUMENT][0], cli.arg_ind);
-								
-								//show we found argument
-								cli.arg_found_flag = 1;
-
-								break; //since command found break out of search
-							}
-						}
-
-						//prints if no argument found
-						if(cli.arg_found_flag == 0)
-						{
-							cli.conf.tx_string_fprt("\r\nERROR: INVALID ARGUMENT TYPE \"help\"\r\n");
-						}
-						break;
-
-						case NUMBER:
-						//run user function and convert ASCII to number from second token entry put in found command
-						cli.cmd_list[cli.cmd_ind]->command_fptr(&cli.token_arr[ARGUMENT][0], strtol(&cli.token_arr[ARGUMENT][0], NULL, 10));
-						break;
-						
-						case NONE:
-						//run user function
-						cli.cmd_list[cli.cmd_ind]->command_fptr(&cli.token_arr[COMMAND][0], 0);
-						break;
-					}
+					//run user function sends command number and ptr to argument
+					cli.cmd_list[cli.cmd_ind]->command_fptr(cli.cmd_ind, &cli.token_arr[ARGUMENT][0]);
 					
 					//to show that we found a command
 					cli.cmd_found_flag = 1;
@@ -267,11 +232,8 @@ void cli_task(void)
 			//prints if no command found
 			if(cli.cmd_found_flag == 0)
 			{
-				cli.conf.tx_string_fprt("\r\nERROR: INVALID COMMAND TYPE \"help\"\r\n");
+				cli.conf.tx_string_fprt("\r\nERROR: NO COMMAND FOUND TYPE \"help\"\r\n");
 			}
-			
-			//clear token array
-			memset(cli.token_arr, 0, sizeof(cli.token_arr));
 		}
 	}
 }
@@ -283,7 +245,7 @@ void cli_task(void)
 ******************************************************************************/
 void cli_add_help_command(void)
 {
-	cli_add_command("help", NONE, help_command, NULL, NULL);
+	cli_add_command("help", help_command);
 }
 
 /******************************************************************************
@@ -291,37 +253,12 @@ void cli_add_help_command(void)
 *
 *  \note
 ******************************************************************************/
-static void help_command(char * str, int32_t num)
+static void help_command(uint32_t cmd_num, char *arg_str)
 {
 	for(cli.cmd_ind = 0; cli.cmd_ind < cli.num_cmds_added; cli.cmd_ind++)
 	{
 		//prints command name
-		snprintf(cli.strn, MAX_LEN_TOKENS, "%*s", MAX_LEN_TOKENS - 1, cli.cmd_list[cli.cmd_ind]->command_name);
+		snprintf(cli.strn, CLI_LOC_STRN_SIZE_BYTES, "%*s\r\n", MAX_LEN_TOKENS - 1, cli.cmd_list[cli.cmd_ind]->command_name);
 		cli.conf.tx_string_fprt(cli.strn);
-
-		//print argument type
-		switch(cli.cmd_list[cli.cmd_ind]->argument_type)
-		{
-			case NONE:
-			cli.conf.tx_string_fprt(" NONE\r\n");
-			break;
-			
-			case STRING:
-			cli.conf.tx_string_fprt(" STRING: ");
-
-			//print all string arguments
-			for(cli.arg_ind = 0; cli.arg_ind < MAX_NUM_STRN_ARG; cli.arg_ind++)
-			{
-				cli.conf.tx_string_fprt(cli.cmd_list[cli.cmd_ind]->string_arguments[cli.arg_ind]);
-				cli.conf.tx_string_fprt(" ");
-			}
-			cli.conf.tx_string_fprt("\r\n");
-
-			break;
-			
-			case NUMBER:
-			cli.conf.tx_string_fprt(" NUMBER\r\n");
-			break;
-		}
 	}
 }
