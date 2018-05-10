@@ -45,7 +45,7 @@ struct
 	char strn[CLI_LOC_STRN_SIZE_BYTES];
 	char token_arr[MAX_NUM_TOKENS][MAX_LEN_TOKENS];
 	
-	cli_config_t conf;
+	cli_conf_t conf;
 	cli_command_t *cmd_list[MAX_NUM_COMMANDS];
 	uint32_t num_cmds_added;
 } cli;
@@ -55,18 +55,34 @@ struct
 * Local Prototypes
 ******************************************************************************/
 static void help_command(uint32_t cmd_num, char *arg_str);
+static int16_t default_rx_byte(void);
+static void default_tx_str(char *str);
 
+
+/******************************************************************************
+*  \brief CLI get config defaults
+*
+*  \note
+******************************************************************************/
+void cli_get_config_defaults(cli_conf_t *cli_conf)
+{
+	cli_conf->rx_byte_fptr    = default_rx_byte;
+	cli_conf->tx_string_fprt  = default_tx_str;
+	cli_conf->enable          = CLI_ENABLED;
+	cli_conf->echo_enable = CLI_ECHO_DISABLED;
+}
 
 /******************************************************************************
 *  \brief Init CLI
 *
 *  \note Point to receive byte and transmit string functions
 ******************************************************************************/
-void cli_init(int16_t (*rx_byte_fptr)(void), void (*tx_string_fprt)(char*))
+void cli_init(cli_conf_t cli_conf)
 {
-	//configure cli
-	cli.conf.rx_byte_fptr = rx_byte_fptr;
-	cli.conf.tx_string_fprt = tx_string_fprt;
+	cli.conf.rx_byte_fptr    = cli_conf.rx_byte_fptr;
+	cli.conf.tx_string_fprt  = cli_conf.tx_string_fprt;
+	cli.conf.enable          = cli_conf.enable;
+	cli.conf.echo_enable = cli_conf.echo_enable;
 }
 
 /******************************************************************************
@@ -105,6 +121,9 @@ void cli_task(void)
 	cli.rx_byte        = -1;
 	cli.token           = 0;
 	cli.cmd_found_flag  = 0;
+	
+	/*If cli is disabled do not run*/
+	if(cli.conf.enable == CLI_DISABLED) return;
 
 	//grab from received buffer
 	cli.rx_byte = cli.conf.rx_byte_fptr();
@@ -112,8 +131,8 @@ void cli_task(void)
 	//if we have received data
 	if(cli.rx_byte != -1)
 	{
-		//echo character but suppress tab
-		if(cli.rx_byte != '\t')
+		//echo character but suppress tab if enabled
+		if((cli.rx_byte != '\t') && (cli.conf.echo_enable == CLI_ECHO_ENABLED))
 		{
 			cli.strn[0] = cli.rx_byte;
 			cli.strn[1] = 0;
@@ -249,6 +268,33 @@ void cli_add_help_command(void)
 }
 
 /******************************************************************************
+*  \brief CLI enable disable
+*
+*  \note disables or enables cli task and cli print
+******************************************************************************/
+void cli_enable(cli_enable_t enable)
+{
+	cli.conf.enable = enable;
+}
+
+/******************************************************************************
+*  \brief CLI print message
+*
+*  \note
+******************************************************************************/
+void cli_print(char *null_term_str)
+{
+	/*If cli is disabled do not run*/
+	if(cli.conf.enable == CLI_DISABLED) return;
+	
+	cli.conf.tx_string_fprt(null_term_str);
+}
+
+
+/**************************************************************************************************
+*                                       LOCAL FUNCTIONS
+**************************************************************************************************/
+/******************************************************************************
 *  \brief Help command
 *
 *  \note
@@ -261,4 +307,24 @@ static void help_command(uint32_t cmd_num, char *arg_str)
 		snprintf(cli.strn, CLI_LOC_STRN_SIZE_BYTES, "%*s\r\n", MAX_LEN_TOKENS - 1, cli.cmd_list[cli.cmd_ind]->command_name);
 		cli.conf.tx_string_fprt(cli.strn);
 	}
+}
+
+/******************************************************************************
+*  \brief Default rx byte function
+*
+*  \note
+******************************************************************************/
+static int16_t default_rx_byte(void)
+{
+	return -1;
+}
+
+/******************************************************************************
+*  \brief Default tx string function
+*
+*  \note
+******************************************************************************/
+static void default_tx_str(char *str)
+{
+	//empty
 }
