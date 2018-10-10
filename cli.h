@@ -12,9 +12,9 @@
 #include <stdint.h>
 
 
-/******************************************************************************
-* Defines
-******************************************************************************/
+/**************************************************************************************************
+*                                             DEFINES
+*************************************************^************************************************/
 #define MAX_NUM_COMMANDS 26 //Max number of commands that can be entered ***the larger the number the more memory cli uses***
 #define MAX_LEN_TOKENS 10   //Max length of each token, should be greater than largest key word or argument
 #define CMD_DELIMITER " "   //Delimiter for tokens
@@ -50,9 +50,9 @@ typedef struct
 } cli_command_t;
 
 
-/******************************************************************************
-* Prototypes
-******************************************************************************/
+/**************************************************************************************************
+*                                            PROTOTYPES
+*************************************************^************************************************/
 void cli_get_config_defaults(cli_conf_t *cli_conf);
 void cli_init(cli_conf_t cli_conf);
 void cli_add_command(char *cmd_name, void (*command_fptr)(uint32_t, char *));
