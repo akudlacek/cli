@@ -15,9 +15,20 @@
 /**************************************************************************************************
 *                                             DEFINES
 *************************************************^************************************************/
-#define MAX_NUM_COMMANDS 26 //Max number of commands that can be entered ***the larger the number the more memory cli uses***
-#define MAX_LEN_TOKENS 10   //Max length of each token, should be greater than largest key word or argument
-#define CMD_DELIMITER " "   //Delimiter for tokens
+#define CLI_MAX_NUM_CMDS         30    //Max number of commands that can be entered ***the larger the number the more memory cli uses***
+#define CLI_MAX_LEN_CMD_ARG      10    //Max length of each token, should be greater than largest cmd name or argument including null terminator
+#define CLI_MAX_STRN_LEN         100   //Largest string for arg type: CLI_STRING including null terminator
+#define CLI_CMD_DELIMITER        " "   //Delimiters for tokens
+
+/*CLI return status*/
+typedef enum
+{
+	CLI_SUCESS,
+	CLI_FAIL_NULL_PARAM,
+	CLI_FAIL_OUT_OF_CMD_SLOTS,
+	CLI_FAIL_CMD_NAME_LEN,
+	CLI_FAIL_CMD_NAME_ILLEGAL_CHAR
+} cli_return_t;
 
 /*CLI enable disable enum*/
 typedef enum
@@ -33,20 +44,28 @@ typedef enum
 	CLI_ECHO_ENABLED
 } cli_echo_enable_t;
 
+/*Cli argument type*/
+typedef enum
+{
+	CLI_SINGLE_WORD,
+	CLI_STRING
+} cli_arg_type_t;
+
 /*CLI configuration struct*/
 typedef	struct
 {
 	int16_t (*rx_byte_fptr)(void);     //function pointer for received byte return -1 for no data or >=0 for ascii data
 	void (*tx_string_fprt)(char*);     //function pointer for transmit null terminated string
 	cli_enable_t enable;               //enables or disable cli
-	cli_echo_enable_t echo_enable; //enables or disables echo
+	cli_echo_enable_t echo_enable;     //enables or disables echo
 } cli_conf_t;
 
 /*Command configuration struct*/
 typedef struct
 {
-	char command_name[MAX_LEN_TOKENS];                       //holds command keyword
-	void (*command_fptr)(uint32_t, char *);                  //pointer to your command function fun_ptr(command_num, argument_str)
+	char command_name[CLI_MAX_LEN_CMD_ARG]; //holds command keyword
+	cli_arg_type_t arg_type;                //holds the argument type
+	void (*command_fptr)(uint32_t, char *); //pointer to your command function fun_ptr(command_num, argument_str)
 } cli_command_t;
 
 
@@ -55,7 +74,7 @@ typedef struct
 *************************************************^************************************************/
 void cli_get_config_defaults(cli_conf_t *cli_conf);
 void cli_init(cli_conf_t cli_conf);
-void cli_add_command(char *cmd_name, void (*command_fptr)(uint32_t, char *));
+cli_return_t cli_add_command(char *cmd_name, cli_arg_type_t arg_type, void (*command_fptr)(uint32_t, char *));
 void cli_task(void);
 void cli_add_help_command(void);
 void cli_enable(cli_enable_t enable);
