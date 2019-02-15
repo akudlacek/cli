@@ -17,7 +17,7 @@
 *************************************************^************************************************/
 #define CLI_MAX_NUM_CMDS         30    //Max number of commands that can be entered ***the larger the number the more memory cli uses***
 #define CLI_MAX_LEN_CMD_ARG      10    //Max length of each token, should be greater than largest cmd name or argument including null terminator
-#define CLI_MAX_STRN_LEN         100   //Largest string for arg type: CLI_STRING including null terminator
+#define CLI_MAX_STRN_LEN         255   //Largest string for arg type: CLI_STRING including null terminator
 #define CLI_CMD_DELIMITER        " "   //Delimiters for tokens
 
 /*CLI return status*/

@@ -34,7 +34,7 @@ enum
 struct
 {
 	char buffer[BUFFER_LEN];
-	uint8_t buffer_ind;
+	uint16_t buffer_ind;
 	char prev_cmd[CLI_MAX_LEN_CMD_ARG];
 	int16_t rx_byte;
 	char *token;
@@ -227,7 +227,7 @@ void cli_task(void)
 		else if(cli.rx_byte == '\t')
 		{
 			strncpy(cli.buffer, cli.prev_cmd, BUFFER_LEN); //copy last valid command
-			cli.buffer[BUFFER_LEN] = 0;                    //Null terminate
+			cli.buffer[BUFFER_LEN - 1] = 0;                //Null terminate
 			cli.buffer_ind = strlen(cli.prev_cmd);         //update index
 			
 			if(cli.conf.echo_enable == CLI_ECHO_ENABLED)
@@ -257,7 +257,7 @@ void cli_task(void)
 				//since strtok places a null at the first delimiter
 				//we need to find the last null start coping from there
 				strncpy(cli.strn, strrchr(cli.token, 0) + 1, CLI_MAX_STRN_LEN);
-				cli.strn[CLI_MAX_STRN_LEN] = 0;                    //Null terminate
+				cli.strn[CLI_MAX_STRN_LEN - 1] = 0;                    //Null terminate
 			}
 
 			//get tokens from local received buffer and put into local token array
@@ -309,7 +309,7 @@ void cli_task(void)
 
 					//records previous command for tab complete
 					strncpy(cli.prev_cmd, cli.token_arr[COMMAND], CLI_MAX_LEN_CMD_ARG);
-					cli.prev_cmd[CLI_MAX_LEN_CMD_ARG] = 0; //Null terminate
+					cli.prev_cmd[CLI_MAX_LEN_CMD_ARG - 1] = 0; //Null terminate
 
 					break; //break out of for loop if command found
 				}
