@@ -12,6 +12,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+//todo: add argument decode and argument type for integers and float
+//todo: add description table for help function
+//todo: maybe make command table instead of using malloc
+
 
 /**************************************************************************************************
 *                                             DEFINES
