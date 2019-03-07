@@ -190,7 +190,7 @@ void cli_task(void)
 		//echo character but suppress tab if enabled
 		if((cli.rx_byte != '\t') && (cli.conf.echo_enable == CLI_ECHO_ENABLED))
 		{
-			echo_str[0] = cli.rx_byte;
+			echo_str[0] = (char)cli.rx_byte;
 			echo_str[1] = 0;
 			cli.conf.tx_string_fprt(echo_str);
 		}
@@ -230,9 +230,9 @@ void cli_task(void)
 		//////////////////////////////TAB LAST COMMAND//////////////////////////////
 		else if(cli.rx_byte == '\t')
 		{
-			strncpy(cli.buffer, cli.prev_cmd, BUFFER_LEN); //copy last valid command
-			cli.buffer[BUFFER_LEN - 1] = 0;                //Null terminate
-			cli.buffer_ind = strlen(cli.prev_cmd);         //update index
+			strncpy(cli.buffer, cli.prev_cmd, BUFFER_LEN);    //copy last valid command
+			cli.buffer[BUFFER_LEN - 1] = 0;                   //Null terminate
+			cli.buffer_ind = (uint16_t)strlen(cli.prev_cmd);  //update index
 			
 			if(cli.conf.echo_enable == CLI_ECHO_ENABLED)
 			cli.conf.tx_string_fprt(cli.buffer);
