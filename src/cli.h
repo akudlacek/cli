@@ -19,6 +19,8 @@
 #define CLI_MAX_LEN_CMD_ARG      10    //Max length of each token, should be greater than largest cmd name or argument including null terminator
 #define CLI_MAX_STRN_LEN         255   //Largest string for arg type: CLI_STRING including null terminator
 #define CLI_CMD_DELIMITER        " "   //Delimiters for tokens
+#define CLI_PROMPT              "> "   //The prompt for user input
+#define CLI_NEW_LINE          "\r\n"   //New line thats used within cli
 
 /*CLI return status*/
 typedef enum

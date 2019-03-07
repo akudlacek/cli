@@ -86,6 +86,7 @@ static void cmd_line_handler(uint32_t cmd_num, char *arg_str)
 	case 2:
 		cli_print("CMD 2 was entered\r\n");
 		cli_print(arg_str);
+		cli_print("\r\n");
 		break;
 
 	default:
@@ -116,7 +117,7 @@ static void cmd_line_init(void)
 	cli_conf.rx_byte_fptr   = rx_byte_wrapper;
 	cli_conf.tx_string_fprt = tx_string_wrapper;
 	cli_conf.enable         = CLI_ENABLED;
-	cli_conf.echo_enable    = CLI_ECHO_ENABLED;
+	cli_conf.echo_enable    = CLI_ECHO_DISABLED;
 	cli_init(cli_conf);
 }
 

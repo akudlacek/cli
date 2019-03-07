@@ -51,6 +51,8 @@ struct
 	cli_conf_t conf;
 	cli_command_t *cmd_list[CLI_MAX_NUM_CMDS];
 	uint32_t num_cmds_added;
+
+	uint8_t prompt_sent_flag;
 } cli;
 
 
@@ -60,6 +62,8 @@ struct
 static void help_command(uint32_t cmd_num, char *arg_str);
 static int16_t default_rx_byte(void);
 static void default_tx_str(char *str);
+
+static void send_new_line(void);
 
 
 /**************************************************************************************************
@@ -88,7 +92,9 @@ void cli_init(cli_conf_t cli_conf)
 	cli.conf.rx_byte_fptr    = cli_conf.rx_byte_fptr;
 	cli.conf.tx_string_fprt  = cli_conf.tx_string_fprt;
 	cli.conf.enable          = cli_conf.enable;
-	cli.conf.echo_enable = cli_conf.echo_enable;
+	cli.conf.echo_enable     = cli_conf.echo_enable;
+
+	cli.prompt_sent_flag     = 0;
 }
 
 /******************************************************************************
@@ -181,6 +187,13 @@ void cli_task(void)
 	/*If cli is disabled do not run*/
 	if(cli.conf.enable == CLI_DISABLED) return;
 
+	/*Send prompt for CLI*/
+	if(cli.prompt_sent_flag == 0)
+	{
+		cli.conf.tx_string_fprt(CLI_PROMPT);
+		cli.prompt_sent_flag = 1;
+	}
+
 	//grab from received buffer
 	cli.rx_byte = cli.conf.rx_byte_fptr();
 
@@ -207,8 +220,12 @@ void cli_task(void)
 				cli.buffer_ind = 0;
 				memset(cli.buffer, 0, BUFFER_LEN); //clear buffer
 				
-				if(cli.conf.echo_enable == CLI_ECHO_ENABLED)
-				cli.conf.tx_string_fprt("\r\n\nERROR: COMMAND LENGTH\r\n\n");
+				cli.conf.tx_string_fprt(CLI_NEW_LINE); //These new lines need to stay on
+				cli.conf.tx_string_fprt("ERROR: COMMAND LENGTH");
+				cli.conf.tx_string_fprt(CLI_NEW_LINE); //These new lines need to stay on
+
+				/*Send prompt next pass*/
+				cli.prompt_sent_flag = 0;
 			}
 			else
 			{
@@ -234,7 +251,6 @@ void cli_task(void)
 			cli.buffer[BUFFER_LEN - 1] = 0;                   //Null terminate
 			cli.buffer_ind = (uint16_t)strlen(cli.prev_cmd);  //update index
 			
-			if(cli.conf.echo_enable == CLI_ECHO_ENABLED)
 			cli.conf.tx_string_fprt(cli.buffer);
 		}
 
@@ -242,9 +258,10 @@ void cli_task(void)
 		//if enter key pressed and buffer has some data
 		else if(((cli.rx_byte == '\r') || (cli.rx_byte == '\n')) && (cli.buffer_ind != 0))
 		{
-			//print new line
-			if(cli.conf.echo_enable == CLI_ECHO_ENABLED)
-			cli.conf.tx_string_fprt("\r\n\n");
+			send_new_line();
+			
+			/*Send prompt next pass*/
+			cli.prompt_sent_flag = 0;
 			
 			//clear token index
 			cli.token_ind = 0;
@@ -291,31 +308,35 @@ void cli_task(void)
 				cli.token_ind++;
 			}
 
-			//////////////////////////////COMMAND SEARCH AND COMMAND HANDELING//////////////////////////////
-			for(cli.cmd_ind = 0; cli.cmd_ind < cli.num_cmds_added; cli.cmd_ind++)
+			/*if there are tokens found, then search for a command*/
+			if(cli.token_ind > 0)
 			{
-				//if first entry of local token array matches one of the commands
-				if(!strncmp(cli.token_arr[COMMAND], cli.cmd_list[cli.cmd_ind]->command_name, CLI_MAX_LEN_CMD_ARG))
+				//////////////////////////////COMMAND SEARCH AND COMMAND HANDELING//////////////////////////////
+				for (cli.cmd_ind = 0; cli.cmd_ind < cli.num_cmds_added; cli.cmd_ind++)
 				{
-					if(cli.cmd_list[cli.cmd_ind]->arg_type == CLI_STRING)
+					//if first entry of local token array matches one of the commands
+					if (!strncmp(cli.token_arr[COMMAND], cli.cmd_list[cli.cmd_ind]->command_name, CLI_MAX_LEN_CMD_ARG))
 					{
-						//run user function sends command number and ptr to string
-						cli.cmd_list[cli.cmd_ind]->command_fptr(cli.cmd_ind, cli.strn);
-					}
-					else
-					{
-						//run user function sends command number and ptr to argument
-						cli.cmd_list[cli.cmd_ind]->command_fptr(cli.cmd_ind, cli.token_arr[ARGUMENT]);
-					}
-					
-					//to show that we found a command
-					cli.cmd_found_flag = 1;
+						if (cli.cmd_list[cli.cmd_ind]->arg_type == CLI_STRING)
+						{
+							//run user function sends command number and ptr to string
+							cli.cmd_list[cli.cmd_ind]->command_fptr(cli.cmd_ind, cli.strn);
+						}
+						else
+						{
+							//run user function sends command number and ptr to argument
+							cli.cmd_list[cli.cmd_ind]->command_fptr(cli.cmd_ind, cli.token_arr[ARGUMENT]);
+						}
 
-					//records previous command for tab complete
-					strncpy(cli.prev_cmd, cli.token_arr[COMMAND], CLI_MAX_LEN_CMD_ARG);
-					cli.prev_cmd[CLI_MAX_LEN_CMD_ARG - 1] = 0; //Null terminate
+						//to show that we found a command
+						cli.cmd_found_flag = 1;
 
-					break; //break out of for loop if command found
+						//records previous command for tab complete
+						strncpy(cli.prev_cmd, cli.token_arr[COMMAND], CLI_MAX_LEN_CMD_ARG);
+						cli.prev_cmd[CLI_MAX_LEN_CMD_ARG - 1] = 0; //Null terminate
+
+						break; //break out of for loop if command found
+					}
 				}
 			}
 			
@@ -329,8 +350,8 @@ void cli_task(void)
 			//prints if no command found
 			if(cli.cmd_found_flag == 0)
 			{
-				if(cli.conf.echo_enable == CLI_ECHO_ENABLED)
-				cli.conf.tx_string_fprt("ERROR: NO COMMAND FOUND TYPE \"help\"\r\n\n");
+				cli.conf.tx_string_fprt("ERROR: NO COMMAND FOUND TYPE \"help\"");
+				cli.conf.tx_string_fprt(CLI_NEW_LINE);
 			}
 			
 			//reset flag
@@ -338,10 +359,12 @@ void cli_task(void)
 		}
 		
 		//Put newline on empty enter press
-		else if(((cli.rx_byte == '\r') || (cli.rx_byte == '\n')) && (cli.conf.echo_enable == CLI_ECHO_ENABLED))
+		else if((cli.rx_byte == '\r') || (cli.rx_byte == '\n'))
 		{
-			//print new line
-			cli.conf.tx_string_fprt("\r\n");
+			send_new_line();
+
+			/*Send prompt next pass*/
+			cli.prompt_sent_flag = 0;
 		}
 	}
 }
@@ -395,7 +418,7 @@ static void help_command(uint32_t cmd_num, char *arg_str)
 	for(cli.cmd_ind = 0; cli.cmd_ind < cli.num_cmds_added; cli.cmd_ind++)
 	{
 		//prints command name
-		snprintf(str, sizeof(str), "%s\r\n", cli.cmd_list[cli.cmd_ind]->command_name);
+		snprintf(str, sizeof(str), "%s%s", cli.cmd_list[cli.cmd_ind]->command_name, CLI_NEW_LINE);
 		cli.conf.tx_string_fprt(str);
 	}
 }
@@ -418,4 +441,16 @@ static int16_t default_rx_byte(void)
 static void default_tx_str(char *str)
 {
 	//empty
+}
+
+/******************************************************************************
+*  \brief Send new line
+*
+*  \note function so new line can be turned on and off with
+*        CLI_ECHO_ENABLED/CLI_ECHO_DISABLED
+******************************************************************************/
+static void send_new_line(void)
+{
+	if(cli.conf.echo_enable == CLI_ECHO_ENABLED)
+		cli.conf.tx_string_fprt(CLI_NEW_LINE);
 }
