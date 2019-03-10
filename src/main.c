@@ -15,12 +15,16 @@
 /**************************************************************************************************
 *                                            VARIABLES
 *************************************************^************************************************/
+char tmp_str[100];
 
 
 /**************************************************************************************************
 *                                         LOCAL PROTOTYPES
 *************************************************^************************************************/
-static void cmd_line_handler(uint32_t cmd_num, char *arg_str);
+void cmd1_func(void *arg);
+void cmd2_func(int *arg);
+void cmd3_func(float *arg);
+void cmd4_func(char *arg);
 static void cmd_line_init(void);
 
 int16_t rx_byte_wrapper(void);
@@ -54,45 +58,51 @@ int main(void)
 *                                         LOCAL FUNCTIONS
 *************************************************^************************************************/
 /******************************************************************************
-*  \brief CLI command function
+*  \brief
 *
 *  \note
 ******************************************************************************/
-static void cmd_line_handler(uint32_t cmd_num, char *arg_str)
+void cmd1_func(void *arg)
 {
-	float arg_num_f;
-	int arg_num_i;
+	cli_print("CMD 1 was entered\r\n");
+	snprintf(tmp_str, sizeof(tmp_str), "this is void func\r\n");
+	cli_print(tmp_str);
+}
 
-	if(arg_str != NULL)
-	{
-		/*Convert argument string to float*/
-		arg_num_f = (float)atof(arg_str);
+/******************************************************************************
+*  \brief
+*
+*  \note
+******************************************************************************/
+void cmd2_func(int *arg)
+{
+	cli_print("CMD 2 was entered\r\n");
+	snprintf(tmp_str, sizeof(tmp_str), "you put int: %d\r\n", *arg);
+	cli_print(tmp_str);
+}
 
-		/*Convert argument string to int*/
-		arg_num_i = atoi(arg_str);
-	}
+/******************************************************************************
+*  \brief
+*
+*  \note
+******************************************************************************/
+void cmd3_func(float *arg)
+{
+	cli_print("CMD 3 was entered\r\n");
+	snprintf(tmp_str, sizeof(tmp_str), "you put float: %f\r\n", *arg);
+	cli_print(tmp_str);
+}
 
-	/*NOTE: The order of this is set by the order the commands are added in command_line_init*/
-	switch (cmd_num)
-	{
-	case 0:
-		//used by help func
-		break;
-
-	case 1:
-		cli_print("CMD 1 was entered\r\n");
-		break;
-
-	case 2:
-		cli_print("CMD 2 was entered\r\n");
-		cli_print(arg_str);
-		cli_print("\r\n");
-		break;
-
-	default:
-		cli_print("NO CMD FOUND\r\n");
-		break;
-	}
+/******************************************************************************
+*  \brief
+*
+*  \note
+******************************************************************************/
+void cmd4_func(char *arg)
+{
+	cli_print("CMD 4 was entered\r\n");
+	cli_print(arg);
+	cli_print("\r\n");
 }
 
 /******************************************************************************
@@ -109,8 +119,10 @@ static void cmd_line_init(void)
 	cli_add_help_command();                      //CMD 0
 
 	/*Add custom commands*/
-	cli_add_command("cmd1", CLI_SINGLE_WORD, cmd_line_handler);   //CMD 1
-	cli_add_command("cmd2", CLI_STRING,      cmd_line_handler);   //CMD 2
+	cli_add_command("cmd1", CLI_NO_ARG, cmd1_func);
+	cli_add_command("cmd2", CLI_INT,    cmd2_func);
+	cli_add_command("cmd3", CLI_FLOAT,  cmd3_func);
+	cli_add_command("cmd4", CLI_STRING, cmd4_func);
 
 	/*Initialize the CLI driver*/
 	cli_get_config_defaults(&cli_conf);

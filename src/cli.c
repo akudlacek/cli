@@ -59,7 +59,7 @@ struct
 /**************************************************************************************************
 *                                         LOCAL PROTOTYPES
 *************************************************^************************************************/
-static void help_command(uint32_t cmd_num, char *arg_str);
+static void help_command(void *no_arg);
 static int16_t default_rx_byte(void);
 static void default_tx_str(char *str);
 
@@ -102,7 +102,7 @@ void cli_init(cli_conf_t cli_conf)
 *
 *  \note if parameters passed are incorrect this function will just not add it
 ******************************************************************************/
-cli_return_t cli_add_command(char *cmd_name, cli_arg_type_t arg_type, void (*command_fptr)(uint32_t, char *))
+cli_return_t cli_add_command(char *cmd_name, cli_arg_type_t arg_type, void(*command_fptr)(void *))
 {
 	uint32_t string_length = 0;
 	uint32_t delimiter_ind = 0;
@@ -183,6 +183,8 @@ cli_return_t cli_add_command(char *cmd_name, cli_arg_type_t arg_type, void (*com
 void cli_task(void)
 {
 	char echo_str[2];
+	float arg_float = 0;
+	int arg_int     = 0;
 	
 	/*If cli is disabled do not run*/
 	if(cli.conf.enable == CLI_DISABLED) return;
@@ -317,15 +319,25 @@ void cli_task(void)
 					//if first entry of local token array matches one of the commands
 					if (!strncmp(cli.token_arr[COMMAND], cli.cmd_list[cli.cmd_ind]->command_name, CLI_MAX_LEN_CMD_ARG))
 					{
-						if (cli.cmd_list[cli.cmd_ind]->arg_type == CLI_STRING)
+						//run command based on type
+						switch(cli.cmd_list[cli.cmd_ind]->arg_type)
 						{
-							//run user function sends command number and ptr to string
-							cli.cmd_list[cli.cmd_ind]->command_fptr(cli.cmd_ind, cli.strn);
-						}
-						else
-						{
-							//run user function sends command number and ptr to argument
-							cli.cmd_list[cli.cmd_ind]->command_fptr(cli.cmd_ind, cli.token_arr[ARGUMENT]);
+							case CLI_INT:
+								if (cli.token_arr[ARGUMENT] != NULL) //to prevent illegal mem access
+									arg_int = atoi(cli.token_arr[ARGUMENT]);
+								cli.cmd_list[cli.cmd_ind]->command_fptr((void *)&arg_int);
+								break;
+							case CLI_FLOAT:
+								if (cli.token_arr[ARGUMENT] != NULL) //to prevent illegal mem access
+									arg_float = (float)atof(cli.token_arr[ARGUMENT]);
+								cli.cmd_list[cli.cmd_ind]->command_fptr((void *)&arg_float);
+								break;
+							case CLI_STRING:
+								cli.cmd_list[cli.cmd_ind]->command_fptr(cli.strn);
+								break;
+							default:
+								cli.cmd_list[cli.cmd_ind]->command_fptr(0); 
+								break;
 						}
 
 						//to show that we found a command
@@ -376,7 +388,7 @@ void cli_task(void)
 ******************************************************************************/
 void cli_add_help_command(void)
 {
-	cli_add_command("help", CLI_SINGLE_WORD, help_command);
+	cli_add_command("help", CLI_NO_ARG, help_command);
 }
 
 /******************************************************************************
@@ -411,7 +423,7 @@ void cli_print(char *null_term_str)
 *
 *  \note
 ******************************************************************************/
-static void help_command(uint32_t cmd_num, char *arg_str)
+static void help_command(void *no_arg)
 {
 	char str[CLI_MAX_LEN_CMD_ARG + 2];
 	

@@ -49,7 +49,9 @@ typedef enum
 /*Cli argument type*/
 typedef enum
 {
-	CLI_SINGLE_WORD,
+	CLI_NO_ARG,
+	CLI_INT,
+	CLI_FLOAT,
 	CLI_STRING
 } cli_arg_type_t;
 
@@ -67,7 +69,7 @@ typedef struct
 {
 	char command_name[CLI_MAX_LEN_CMD_ARG]; //holds command keyword
 	cli_arg_type_t arg_type;                //holds the argument type
-	void (*command_fptr)(uint32_t, char *); //pointer to your command function fun_ptr(command_num, argument_str)
+	void (*command_fptr)(void *);           //pointer to your command function, argument depends on the type selected when added
 } cli_command_t;
 
 
@@ -76,7 +78,7 @@ typedef struct
 *************************************************^************************************************/
 void cli_get_config_defaults(cli_conf_t *cli_conf);
 void cli_init(cli_conf_t cli_conf);
-cli_return_t cli_add_command(char *cmd_name, cli_arg_type_t arg_type, void (*command_fptr)(uint32_t, char *));
+cli_return_t cli_add_command(char *cmd_name, cli_arg_type_t arg_type, void(*command_fptr)(void *));
 void cli_task(void);
 void cli_add_help_command(void);
 void cli_enable(cli_enable_t enable);
