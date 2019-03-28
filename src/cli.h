@@ -29,7 +29,8 @@ typedef enum
 	CLI_FAIL_NULL_PARAM,
 	CLI_FAIL_OUT_OF_CMD_SLOTS,
 	CLI_FAIL_CMD_NAME_LEN,
-	CLI_FAIL_CMD_NAME_ILLEGAL_CHAR
+	CLI_FAIL_CMD_NAME_ILLEGAL_CHAR,
+	CLI_FAIL_UNSUPPORTED_ARG_TYPE
 } cli_return_t;
 
 /*CLI enable disable enum*/
@@ -69,7 +70,14 @@ typedef struct
 {
 	char command_name[CLI_MAX_LEN_CMD_ARG]; //holds command keyword
 	cli_arg_type_t arg_type;                //holds the argument type
-	void (*command_fptr)(void *);           //pointer to your command function, argument depends on the type selected when added
+
+	union cmd_fptr
+	{
+		void(*cmd_void)(void);            //pointer to your command function, no argument
+		void(*cmd_int)(int);              //pointer to your command function, int argument
+		void(*cmd_float)(float);          //pointer to your command function, float argument
+		void(*cmd_str)(char *);           //pointer to your command function, string argument
+	};
 } cli_command_t;
 
 
@@ -78,7 +86,7 @@ typedef struct
 *************************************************^************************************************/
 void cli_get_config_defaults(cli_conf_t *cli_conf);
 void cli_init(cli_conf_t cli_conf);
-cli_return_t cli_add_command(char *cmd_name, cli_arg_type_t arg_type, void(*command_fptr)(void *));
+cli_return_t cli_add_command(char *cmd_name, cli_arg_type_t arg_type, void(*command_fptr));
 void cli_task(void);
 void cli_add_help_command(void);
 void cli_enable(cli_enable_t enable);

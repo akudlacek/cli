@@ -21,10 +21,10 @@ char tmp_str[100];
 /**************************************************************************************************
 *                                         LOCAL PROTOTYPES
 *************************************************^************************************************/
-void cmd1_func(void *arg);
-void cmd2_func(int *arg);
-void cmd3_func(float *arg);
-void cmd4_func(char *arg);
+void void_func_ex(void *arg);
+void int_func_ex(int *arg);
+void float_func_ex(float *arg);
+void str_func_ex(char *arg);
 static void cmd_line_init(void);
 
 int16_t rx_byte_wrapper(void);
@@ -62,9 +62,9 @@ int main(void)
 *
 *  \note
 ******************************************************************************/
-void cmd1_func(void *arg)
+void void_func_ex(void)
 {
-	cli_print("CMD 1 was entered\r\n");
+	cli_print("void_func_ex was entered\r\n");
 	snprintf(tmp_str, sizeof(tmp_str), "this is void func\r\n");
 	cli_print(tmp_str);
 }
@@ -74,10 +74,10 @@ void cmd1_func(void *arg)
 *
 *  \note
 ******************************************************************************/
-void cmd2_func(int *arg)
+void int_func_ex(int arg)
 {
-	cli_print("CMD 2 was entered\r\n");
-	snprintf(tmp_str, sizeof(tmp_str), "you put int: %d\r\n", *arg);
+	cli_print("int_func_ex was entered\r\n");
+	snprintf(tmp_str, sizeof(tmp_str), "you put int: %d\r\n", arg);
 	cli_print(tmp_str);
 }
 
@@ -86,10 +86,10 @@ void cmd2_func(int *arg)
 *
 *  \note
 ******************************************************************************/
-void cmd3_func(float *arg)
+void float_func_ex(float arg)
 {
-	cli_print("CMD 3 was entered\r\n");
-	snprintf(tmp_str, sizeof(tmp_str), "you put float: %f\r\n", *arg);
+	cli_print("float_func_ex was entered\r\n");
+	snprintf(tmp_str, sizeof(tmp_str), "you put float: %f\r\n", arg);
 	cli_print(tmp_str);
 }
 
@@ -98,9 +98,10 @@ void cmd3_func(float *arg)
 *
 *  \note
 ******************************************************************************/
-void cmd4_func(char *arg)
+void str_func_ex(const char *arg)
 {
-	cli_print("CMD 4 was entered\r\n");
+	cli_print("str_func_ex was entered\r\n");
+	snprintf(tmp_str, sizeof(tmp_str), "you put string: %s\r\n", arg);
 	cli_print(arg);
 	cli_print("\r\n");
 }
@@ -119,10 +120,10 @@ static void cmd_line_init(void)
 	cli_add_help_command();                      //CMD 0
 
 	/*Add custom commands*/
-	cli_add_command("cmd1", CLI_NO_ARG, cmd1_func);
-	cli_add_command("cmd2", CLI_INT,    cmd2_func);
-	cli_add_command("cmd3", CLI_FLOAT,  cmd3_func);
-	cli_add_command("cmd4", CLI_STRING, cmd4_func);
+	cli_add_command("void",  CLI_NO_ARG, void_func_ex);
+	cli_add_command("int",   CLI_INT,    int_func_ex);
+	cli_add_command("float", CLI_FLOAT,  float_func_ex);
+	cli_add_command("str",   CLI_STRING, str_func_ex);
 
 	/*Initialize the CLI driver*/
 	cli_get_config_defaults(&cli_conf);

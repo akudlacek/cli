@@ -102,7 +102,7 @@ void cli_init(cli_conf_t cli_conf)
 *
 *  \note if parameters passed are incorrect this function will just not add it
 ******************************************************************************/
-cli_return_t cli_add_command(char *cmd_name, cli_arg_type_t arg_type, void(*command_fptr)(void *))
+cli_return_t cli_add_command(char *cmd_name, cli_arg_type_t arg_type, void(*command_fptr))
 {
 	uint32_t string_length = 0;
 	uint32_t delimiter_ind = 0;
@@ -166,9 +166,26 @@ cli_return_t cli_add_command(char *cmd_name, cli_arg_type_t arg_type, void(*comm
 	//ARG TYPE
 	cli.cmd_list[cli.num_cmds_added]->arg_type = arg_type;
 	
-	//FUNCTION
-	cli.cmd_list[cli.num_cmds_added]->command_fptr = command_fptr;                      //points command to your function
-			
+	//FUNCTION - points command to your function
+	switch(arg_type)
+	{
+		case CLI_NO_ARG:
+			cli.cmd_list[cli.num_cmds_added]->cmd_void = command_fptr;
+			break;
+		case CLI_INT:
+			cli.cmd_list[cli.num_cmds_added]->cmd_int = command_fptr;
+			break;
+		case CLI_FLOAT:
+			cli.cmd_list[cli.num_cmds_added]->cmd_float = command_fptr;
+			break;
+		case CLI_STRING:
+			cli.cmd_list[cli.num_cmds_added]->cmd_str = command_fptr;
+			break;
+		default:
+			return CLI_FAIL_UNSUPPORTED_ARG_TYPE;
+			break;
+	}
+
 	//Increment the number of commands
 	cli.num_cmds_added++;
 	
@@ -325,18 +342,18 @@ void cli_task(void)
 							case CLI_INT:
 								if (cli.token_arr[ARGUMENT] != NULL) //to prevent illegal mem access
 									arg_int = atoi(cli.token_arr[ARGUMENT]);
-								cli.cmd_list[cli.cmd_ind]->command_fptr((void *)&arg_int);
+								cli.cmd_list[cli.cmd_ind]->cmd_int(arg_int);
 								break;
 							case CLI_FLOAT:
 								if (cli.token_arr[ARGUMENT] != NULL) //to prevent illegal mem access
 									arg_float = (float)atof(cli.token_arr[ARGUMENT]);
-								cli.cmd_list[cli.cmd_ind]->command_fptr((void *)&arg_float);
+								cli.cmd_list[cli.cmd_ind]->cmd_float(arg_float);
 								break;
 							case CLI_STRING:
-								cli.cmd_list[cli.cmd_ind]->command_fptr(cli.strn);
+								cli.cmd_list[cli.cmd_ind]->cmd_str(cli.strn);
 								break;
 							default:
-								cli.cmd_list[cli.cmd_ind]->command_fptr(0); 
+								cli.cmd_list[cli.cmd_ind]->cmd_void(0);
 								break;
 						}
 
