@@ -21,14 +21,14 @@ char tmp_str[100];
 /**************************************************************************************************
 *                                         LOCAL PROTOTYPES
 *************************************************^************************************************/
-void void_func_ex(void *arg);
-void int_func_ex(int *arg);
-void float_func_ex(float *arg);
-void str_func_ex(char *arg);
+void void_func_ex(void);
+void int_func_ex(int arg);
+void float_func_ex(float arg);
+void str_func_ex(const char *arg);
 static void cmd_line_init(void);
 
 int16_t rx_byte_wrapper(void);
-void tx_string_wrapper(char *string_ptr);
+void tx_string_wrapper(const char *string_ptr);
 
 
 /**************************************************************************************************
@@ -160,7 +160,7 @@ int16_t rx_byte_wrapper(void)
 *
 *  \note transmit null terminated string
 ******************************************************************************/
-void tx_string_wrapper(char *string_ptr)
+void tx_string_wrapper(const char *string_ptr)
 {
 	printf("%s", string_ptr);
 }

@@ -61,7 +61,7 @@ struct
 *************************************************^************************************************/
 static void help_command(void *no_arg);
 static int16_t default_rx_byte(void);
-static void default_tx_str(char *str);
+static void default_tx_str(const char *str);
 
 static void send_new_line(void);
 
@@ -102,7 +102,7 @@ void cli_init(cli_conf_t cli_conf)
 *
 *  \note if parameters passed are incorrect this function will just not add it
 ******************************************************************************/
-cli_return_t cli_add_command(char *cmd_name, cli_arg_type_t arg_type, void(*command_fptr))
+cli_return_t cli_add_command(const char *cmd_name, cli_arg_type_t arg_type, void(*command_fptr))
 {
 	uint32_t string_length = 0;
 	uint32_t delimiter_ind = 0;
@@ -353,7 +353,7 @@ void cli_task(void)
 								cli.cmd_list[cli.cmd_ind]->cmd_str(cli.strn);
 								break;
 							default:
-								cli.cmd_list[cli.cmd_ind]->cmd_void(0);
+								cli.cmd_list[cli.cmd_ind]->cmd_void();
 								break;
 						}
 
@@ -423,7 +423,7 @@ void cli_enable(cli_enable_t enable)
 *
 *  \note
 ******************************************************************************/
-void cli_print(char *null_term_str)
+void cli_print(const char *null_term_str)
 {
 	/*If cli is disabled do not run*/
 	if(cli.conf.enable == CLI_DISABLED) return;
@@ -467,7 +467,7 @@ static int16_t default_rx_byte(void)
 *
 *  \note
 ******************************************************************************/
-static void default_tx_str(char *str)
+static void default_tx_str(const char *str)
 {
 	//empty
 }
