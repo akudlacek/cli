@@ -94,7 +94,7 @@ typedef	struct
 	void (*tx_string_fprt)(const char*); //function pointer for transmit null terminated string
 	cli_enable_t enable;                 //enables or disable cli
 	cli_echo_enable_t echo_enable;       //enables or disables echo
-	cli_command_t *cmd_list;             //points list of commands
+	const cli_command_t *cmd_list;       //points list of commands
 } cli_conf_t;
 
 
