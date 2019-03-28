@@ -15,12 +15,22 @@
 /**************************************************************************************************
 *                                             DEFINES
 *************************************************^************************************************/
-#define CLI_MAX_NUM_CMDS         30    //Max number of commands that can be entered ***the larger the number the more memory cli uses***
 #define CLI_MAX_LEN_CMD_ARG      10    //Max length of each token, should be greater than largest cmd name or argument including null terminator
 #define CLI_MAX_STRN_LEN         255   //Largest string for arg type: CLI_STRING including null terminator
+
+/*HELP*/
+#define CLI_CMD_MAX_HELP_LENGTH  64    //if this is zero, there will be no help
+#if CLI_CMD_MAX_HELP_LENGTH > 0
+#define HELP(x)  (x)
+#else
+#define HELP(x)	  0
+#endif
+
 #define CLI_CMD_DELIMITER        " "   //Delimiters for tokens
 #define CLI_PROMPT              "> "   //The prompt for user input
 #define CLI_NEW_LINE          "\r\n"   //New line thats used within cli
+
+#define CLI_CMD_LIST_END  {0, 0, 0, 0} //Last entry for command list
 
 /*CLI return status*/
 typedef enum
@@ -56,6 +66,27 @@ typedef enum
 	CLI_STRING
 } cli_arg_type_t;
 
+/*Command configuration struct*/
+typedef struct
+{
+	char command_name[CLI_MAX_LEN_CMD_ARG]; //holds command keyword
+	cli_arg_type_t arg_type;                //holds the argument type
+
+	union cmd_fptr                          //Pointer to your command function, multiple argument types handled
+	{
+		void(*cmd_void)(void);
+		void(*cmd_int)(int);
+		void(*cmd_float)(float);
+		void(*cmd_str)(const char *);
+	};
+
+#if CLI_CMD_MAX_HELP_LENGTH > 0
+	char help[CLI_CMD_MAX_HELP_LENGTH];     //Holds help string
+#else
+	uint8_t junk;
+#endif
+} cli_command_t;
+
 /*CLI configuration struct*/
 typedef	struct
 {
@@ -63,22 +94,8 @@ typedef	struct
 	void (*tx_string_fprt)(const char*); //function pointer for transmit null terminated string
 	cli_enable_t enable;                 //enables or disable cli
 	cli_echo_enable_t echo_enable;       //enables or disables echo
+	cli_command_t *cmd_list;             //points list of commands
 } cli_conf_t;
-
-/*Command configuration struct*/
-typedef struct
-{
-	char command_name[CLI_MAX_LEN_CMD_ARG]; //holds command keyword
-	cli_arg_type_t arg_type;                //holds the argument type
-
-	union cmd_fptr
-	{
-		void(*cmd_void)(void);            //pointer to your command function, no argument
-		void(*cmd_int)(int);              //pointer to your command function, int argument
-		void(*cmd_float)(float);          //pointer to your command function, float argument
-		void(*cmd_str)(const char *);     //pointer to your command function, string argument
-	};
-} cli_command_t;
 
 
 /**************************************************************************************************
@@ -86,11 +103,10 @@ typedef struct
 *************************************************^************************************************/
 void cli_get_config_defaults(cli_conf_t *cli_conf);
 void cli_init(cli_conf_t cli_conf);
-cli_return_t cli_add_command(const char *cmd_name, cli_arg_type_t arg_type, void(*command_fptr));
 void cli_task(void);
-void cli_add_help_command(void);
 void cli_enable(cli_enable_t enable);
 void cli_print(const char *null_term_str);
+void cli_help_command(void);
 
 
 #endif /* CLI_H_ */

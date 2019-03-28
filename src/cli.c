@@ -12,10 +12,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-//todo: add argument decode and argument type for integers and float
-//todo: add description table for help function
-//todo: maybe make command table instead of using malloc
-
 
 /**************************************************************************************************
 *                                             DEFINES
@@ -49,17 +45,20 @@ struct
 	char *token_arr[MAX_NUM_TOKENS];
 	
 	cli_conf_t conf;
-	cli_command_t *cmd_list[CLI_MAX_NUM_CMDS];
 	uint32_t num_cmds_added;
 
 	uint8_t prompt_sent_flag;
 } cli;
 
+static const cli_command_t default_cmd_lsit[] =
+{
+	CLI_CMD_LIST_END                                             // must be LAST
+};
+
 
 /**************************************************************************************************
 *                                         LOCAL PROTOTYPES
 *************************************************^************************************************/
-static void help_command(void *no_arg);
 static int16_t default_rx_byte(void);
 static void default_tx_str(const char *str);
 
@@ -79,7 +78,8 @@ void cli_get_config_defaults(cli_conf_t *cli_conf)
 	cli_conf->rx_byte_fptr    = default_rx_byte;
 	cli_conf->tx_string_fprt  = default_tx_str;
 	cli_conf->enable          = CLI_ENABLED;
-	cli_conf->echo_enable = CLI_ECHO_DISABLED;
+	cli_conf->echo_enable     = CLI_ECHO_DISABLED;
+	cli_conf->cmd_list        = default_cmd_lsit;
 }
 
 /******************************************************************************
@@ -93,103 +93,17 @@ void cli_init(cli_conf_t cli_conf)
 	cli.conf.tx_string_fprt  = cli_conf.tx_string_fprt;
 	cli.conf.enable          = cli_conf.enable;
 	cli.conf.echo_enable     = cli_conf.echo_enable;
+	cli.conf.cmd_list        = cli_conf.cmd_list;
 
 	cli.prompt_sent_flag     = 0;
-}
+	cli.num_cmds_added       = 0;
 
-/******************************************************************************
-*  \brief Add CLI Command
-*
-*  \note if parameters passed are incorrect this function will just not add it
-******************************************************************************/
-cli_return_t cli_add_command(const char *cmd_name, cli_arg_type_t arg_type, void(*command_fptr))
-{
-	uint32_t string_length = 0;
-	uint32_t delimiter_ind = 0;
-	uint32_t cmd_name_ind  = 0;
-	
-	//NULL check
-	if(cmd_name == NULL || command_fptr == NULL)
+	//Count number of commands in list
+	//looks for first null in first char of string of the command name
+	while(cli.conf.cmd_list[cli.num_cmds_added].command_name[0] != 0)
 	{
-		return CLI_FAIL_NULL_PARAM;
+		cli.num_cmds_added++;
 	}
-	
-	//Number of command check
-	if(cli.num_cmds_added >= CLI_MAX_NUM_CMDS)
-	{
-		return CLI_FAIL_OUT_OF_CMD_SLOTS;
-	}
-	
-	//Check cmd_name length stopping at limit of cmd_name size
-	while((cmd_name[string_length] != 0) && (string_length < CLI_MAX_LEN_CMD_ARG))
-	{
-		string_length++;
-	}
-	
-	//Cmd len check
-	if(string_length >= CLI_MAX_LEN_CMD_ARG)
-	{
-		return CLI_FAIL_CMD_NAME_LEN;
-	}
-	
-	//Find any illegal character (delimiter and non printable ASCII)
-	while(cmd_name[cmd_name_ind] != 0)
-	{
-		//Check for non printable ASCII
-		if((cmd_name[cmd_name_ind] < ' ') || (cmd_name[cmd_name_ind] > '~'))
-		{
-			return CLI_FAIL_CMD_NAME_ILLEGAL_CHAR;
-		}
-	
-		//Check for delimiter in cmd_name
-		while(CLI_CMD_DELIMITER[delimiter_ind] != 0)
-		{
-			if(cmd_name[cmd_name_ind] == CLI_CMD_DELIMITER[delimiter_ind])
-			{
-				return CLI_FAIL_CMD_NAME_ILLEGAL_CHAR;
-			}
-			delimiter_ind++;
-		}
-	
-		delimiter_ind = 0;
-		cmd_name_ind++;
-	}
-	
-	//Point command list to memory allocated for command
-	cli.cmd_list[cli.num_cmds_added] = (cli_command_t *)malloc(sizeof(cli_command_t));
-			
-	/****Load command configuration****/
-	//CMD NAME
-	strncpy(cli.cmd_list[cli.num_cmds_added]->command_name, cmd_name, CLI_MAX_LEN_CMD_ARG);  //add command name (this will be what you type to use a command)
-	cli.cmd_list[cli.num_cmds_added]->command_name[CLI_MAX_LEN_CMD_ARG] = 0;                 //Null terminate
-	
-	//ARG TYPE
-	cli.cmd_list[cli.num_cmds_added]->arg_type = arg_type;
-	
-	//FUNCTION - points command to your function
-	switch(arg_type)
-	{
-		case CLI_NO_ARG:
-			cli.cmd_list[cli.num_cmds_added]->cmd_void = command_fptr;
-			break;
-		case CLI_INT:
-			cli.cmd_list[cli.num_cmds_added]->cmd_int = command_fptr;
-			break;
-		case CLI_FLOAT:
-			cli.cmd_list[cli.num_cmds_added]->cmd_float = command_fptr;
-			break;
-		case CLI_STRING:
-			cli.cmd_list[cli.num_cmds_added]->cmd_str = command_fptr;
-			break;
-		default:
-			return CLI_FAIL_UNSUPPORTED_ARG_TYPE;
-			break;
-	}
-
-	//Increment the number of commands
-	cli.num_cmds_added++;
-	
-	return CLI_SUCESS;
 }
 
 /******************************************************************************
@@ -334,26 +248,26 @@ void cli_task(void)
 				for (cli.cmd_ind = 0; cli.cmd_ind < cli.num_cmds_added; cli.cmd_ind++)
 				{
 					//if first entry of local token array matches one of the commands
-					if (!strncmp(cli.token_arr[COMMAND], cli.cmd_list[cli.cmd_ind]->command_name, CLI_MAX_LEN_CMD_ARG))
+					if (!strncmp(cli.token_arr[COMMAND], cli.conf.cmd_list[cli.cmd_ind].command_name, CLI_MAX_LEN_CMD_ARG))
 					{
 						//run command based on type
-						switch(cli.cmd_list[cli.cmd_ind]->arg_type)
+						switch(cli.conf.cmd_list[cli.cmd_ind].arg_type)
 						{
 							case CLI_INT:
 								if (cli.token_arr[ARGUMENT] != NULL) //to prevent illegal mem access
 									arg_int = atoi(cli.token_arr[ARGUMENT]);
-								cli.cmd_list[cli.cmd_ind]->cmd_int(arg_int);
+								cli.conf.cmd_list[cli.cmd_ind].cmd_int(arg_int);
 								break;
 							case CLI_FLOAT:
 								if (cli.token_arr[ARGUMENT] != NULL) //to prevent illegal mem access
 									arg_float = (float)atof(cli.token_arr[ARGUMENT]);
-								cli.cmd_list[cli.cmd_ind]->cmd_float(arg_float);
+								cli.conf.cmd_list[cli.cmd_ind].cmd_float(arg_float);
 								break;
 							case CLI_STRING:
-								cli.cmd_list[cli.cmd_ind]->cmd_str(cli.strn);
+								cli.conf.cmd_list[cli.cmd_ind].cmd_str(cli.strn);
 								break;
 							default:
-								cli.cmd_list[cli.cmd_ind]->cmd_void();
+								cli.conf.cmd_list[cli.cmd_ind].cmd_void();
 								break;
 						}
 
@@ -399,16 +313,6 @@ void cli_task(void)
 }
 
 /******************************************************************************
-*  \brief Add help command
-*
-*  \note
-******************************************************************************/
-void cli_add_help_command(void)
-{
-	cli_add_command("help", CLI_NO_ARG, help_command);
-}
-
-/******************************************************************************
 *  \brief CLI enable disable
 *
 *  \note disables or enables cli task and cli print
@@ -431,27 +335,27 @@ void cli_print(const char *null_term_str)
 	cli.conf.tx_string_fprt(null_term_str);
 }
 
-
-/**************************************************************************************************
-*                                         LOCAL FUNCTIONS
-*************************************************^************************************************/
 /******************************************************************************
 *  \brief Help command
 *
 *  \note
 ******************************************************************************/
-static void help_command(void *no_arg)
+void cli_help_command(void)
 {
-	char str[CLI_MAX_LEN_CMD_ARG + 2];
-	
-	for(cli.cmd_ind = 0; cli.cmd_ind < cli.num_cmds_added; cli.cmd_ind++)
+	char str[CLI_MAX_LEN_CMD_ARG + 2 + CLI_CMD_MAX_HELP_LENGTH + sizeof(CLI_NEW_LINE)];
+
+	for (cli.cmd_ind = 0; cli.cmd_ind < cli.num_cmds_added; cli.cmd_ind++)
 	{
 		//prints command name
-		snprintf(str, sizeof(str), "%s%s", cli.cmd_list[cli.cmd_ind]->command_name, CLI_NEW_LINE);
+		snprintf(str, sizeof(str), "%s: %s%s", cli.conf.cmd_list[cli.cmd_ind].command_name, cli.conf.cmd_list[cli.cmd_ind].help, CLI_NEW_LINE);
 		cli.conf.tx_string_fprt(str);
 	}
 }
 
+
+/**************************************************************************************************
+*                                         LOCAL FUNCTIONS
+*************************************************^************************************************/
 /******************************************************************************
 *  \brief Default rx byte function
 *
