@@ -180,8 +180,7 @@ void cli_task(void)
 		//////////////////////////////TAB LAST COMMAND//////////////////////////////
 		else if(cli.rx_byte == '\t')
 		{
-			strncpy(cli.buffer, cli.prev_cmd, BUFFER_LEN);    //copy last valid command
-			cli.buffer[BUFFER_LEN - 1] = 0;                   //Null terminate
+			cli_strncpy(cli.buffer, sizeof(cli.buffer), cli.prev_cmd, sizeof(cli.prev_cmd)); //copy last valid command
 			cli.buffer_ind = (uint16_t)strlen(cli.prev_cmd);  //update index
 			
 			cli.conf.tx_string_fprt(cli.buffer);
@@ -210,8 +209,12 @@ void cli_task(void)
 			{
 				//since strtok places a null at the first delimiter
 				//we need to find the last null start coping from there
-				strncpy(cli.strn, strrchr(cli.token, 0) + 1, CLI_MAX_STRN_LEN);
-				cli.strn[CLI_MAX_STRN_LEN - 1] = 0;                    //Null terminate
+				cli_strncpy(
+								cli.strn,                                                          //dest
+								sizeof(cli.strn),                                                  //size of dest
+								(strrchr(cli.token, 0) + 1),                                       //src - right after token null
+								((sizeof(cli.buffer) - 1) - (strnlen(cli.buffer, sizeof(cli.buffer)) + 1)) //size of src - (buffer num of bytes - ((len of first token + 1for null))
+						);
 			}
 
 			//get tokens from local received buffer and put into local token array
@@ -275,8 +278,7 @@ void cli_task(void)
 						cli.cmd_found_flag = 1;
 
 						//records previous command for tab complete
-						strncpy(cli.prev_cmd, cli.token_arr[COMMAND], CLI_MAX_LEN_CMD_ARG);
-						cli.prev_cmd[CLI_MAX_LEN_CMD_ARG - 1] = 0; //Null terminate
+						cli_strncpy(cli.prev_cmd, sizeof(cli.prev_cmd), cli.token_arr[COMMAND], CLI_MAX_LEN_CMD_ARG);
 
 						break; //break out of for loop if command found
 					}
@@ -350,6 +352,55 @@ void cli_help_command(void)
 		snprintf(str, sizeof(str), "%s: %s%s", cli.conf.cmd_list[cli.cmd_ind].command_name, cli.conf.cmd_list[cli.cmd_ind].help, CLI_NEW_LINE);
 		cli.conf.tx_string_fprt(str);
 	}
+}
+
+/******************************************************************************
+*  \brief CLI STRNCPY
+*
+*  \note
+******************************************************************************/
+char * cli_strncpy(char *dest, size_t dest_size, const char *src, size_t src_size)
+{
+	char *a = dest;
+	char *b = dest + dest_size;
+	const char *c = src;
+	const char *d = src + src_size;
+	size_t index;
+
+	//check for null pointer
+	if(dest == 0 || src == 0)
+		return dest;
+
+	//check for zero size
+	if(dest_size == 0 || src_size == 0)
+		return dest;
+
+	//check for overlap
+	if((a <= c && b >= c) || (c <= a && d >= a))
+		return dest;
+
+	for(index = 0; index < dest_size; index++)
+	{
+		//Exceeded src size
+		if(index == src_size)
+		{
+			dest[index] = 0;
+			break;
+		}
+
+		dest[index] = src[index];
+
+		//Src null found
+		if(src[index] == 0)
+		{
+			break;
+		}
+	}
+
+	//Put null at end
+	dest[dest_size - 1] = 0;
+
+	return dest;
 }
 
 
