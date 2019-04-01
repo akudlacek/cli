@@ -213,7 +213,7 @@ void cli_task(void)
 								cli.strn,                                                          //dest
 								sizeof(cli.strn),                                                  //size of dest
 								(strrchr(cli.token, 0) + 1),                                       //src - right after token null
-								((sizeof(cli.buffer) - 1) - (strnlen(cli.buffer, sizeof(cli.buffer)) + 1)) //size of src - (buffer num of bytes - ((len of first token + 1for null))
+								(sizeof(cli.buffer) - (strnlen(cli.buffer, sizeof(cli.buffer)) + 1)) //size of src - (buffer num of bytes - ((len of first token + 1for null))
 						);
 			}
 
