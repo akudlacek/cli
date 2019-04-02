@@ -56,6 +56,10 @@ int main(void)
 {
 	cmd_line_init();
 
+	//unit test
+	printf("cli_strncpy %s\r\n", (tst_cli_strncpy() == CLI_TEST_FAIL ? "FAIL" : "PASS"));
+	
+
 	printf("hello\r\n");
 
 	while(1)

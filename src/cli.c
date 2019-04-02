@@ -362,9 +362,9 @@ void cli_help_command(void)
 int cli_strncpy(char *dest, size_t dest_size, const char *src, size_t src_size)
 {
 	char *a = dest;
-	char *b = dest + dest_size;
+	char *b = &dest[dest_size - 1];
 	const char *c = src;
-	const char *d = src + src_size;
+	const char *d = &src[src_size - 1];
 	size_t index;
 
 	//check for null pointer
