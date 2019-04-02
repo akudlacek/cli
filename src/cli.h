@@ -107,7 +107,7 @@ void cli_task(void);
 void cli_enable(cli_enable_t enable);
 void cli_print(const char *null_term_str);
 void cli_help_command(void);
-char * cli_strncpy(char *dest, size_t dest_size, const char *src, size_t src_size);
+int cli_strncpy(char *dest, size_t dest_size, const char *src, size_t src_size);
 
 
 #endif /* CLI_H_ */

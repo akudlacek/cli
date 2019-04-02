@@ -357,9 +357,9 @@ void cli_help_command(void)
 /******************************************************************************
 *  \brief CLI STRNCPY
 *
-*  \note
+*  \note return -1 for err 0 for success
 ******************************************************************************/
-char * cli_strncpy(char *dest, size_t dest_size, const char *src, size_t src_size)
+int cli_strncpy(char *dest, size_t dest_size, const char *src, size_t src_size)
 {
 	char *a = dest;
 	char *b = dest + dest_size;
@@ -369,15 +369,15 @@ char * cli_strncpy(char *dest, size_t dest_size, const char *src, size_t src_siz
 
 	//check for null pointer
 	if(dest == 0 || src == 0)
-		return dest;
+		return -1;
 
 	//check for zero size
 	if(dest_size == 0 || src_size == 0)
-		return dest;
+		return -1;
 
 	//check for overlap
 	if((a <= c && b >= c) || (c <= a && d >= a))
-		return dest;
+		return -1;
 
 	for(index = 0; index < dest_size; index++)
 	{
@@ -400,7 +400,7 @@ char * cli_strncpy(char *dest, size_t dest_size, const char *src, size_t src_siz
 	//Put null at end
 	dest[dest_size - 1] = 0;
 
-	return dest;
+	return 0;
 }
 
 

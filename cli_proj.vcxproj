@@ -19,10 +19,12 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\cli_test.c" />
     <ClCompile Include="src\cli.c" />
     <ClCompile Include="src\main.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\cli_test.h" />
     <ClInclude Include="src\cli.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -30,6 +32,7 @@
     <ProjectGuid>{8A50D6AD-58AE-44B8-B9C3-96DEB0AC90D1}</ProjectGuid>
     <RootNamespace>cliproj</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
+    <ProjectName>cli</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
