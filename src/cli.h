@@ -108,6 +108,7 @@ void cli_enable(cli_enable_t enable);
 void cli_print(const char *null_term_str);
 void cli_help_command(void);
 int cli_strncpy(char *dest, size_t dest_size, const char *src, size_t src_size);
+char * cli_strtok_r(char *s, const char *delim, char **save_ptr);
 
 
 #endif /* CLI_H_ */
