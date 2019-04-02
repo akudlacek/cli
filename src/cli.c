@@ -16,14 +16,6 @@
 /**************************************************************************************************
 *                                             DEFINES
 *************************************************^************************************************/
-#define MAX_NUM_TOKENS     2                                                        //Defines the number of tokens involved in a command ***DO NOT CHANGE***
-
-//only used for local_token_array
-enum
-{
-	COMMAND = 0,
-	ARGUMENT = 1
-};
 
 
 /**************************************************************************************************
@@ -35,13 +27,9 @@ struct
 	char buffer[CLI_MAX_BUFF_LEN];
 	uint16_t buffer_ind;
 	char prev_cmd[CLI_MAX_LEN_CMD];
-	int16_t rx_byte;
-	char *token;
-	uint8_t token_ind;
-	uint8_t cmd_ind;
-	uint8_t cmd_found_flag;
-	char strn[CLI_MAX_BUFF_LEN];
-	char *token_arr[MAX_NUM_TOKENS];
+
+	char *cmd;
+	char *arg;
 	
 	cli_conf_t conf;
 	uint32_t num_cmds_added;
@@ -113,8 +101,11 @@ void cli_init(cli_conf_t cli_conf)
 void cli_task(void)
 {
 	char echo_str[2];
-	float arg_float = 0;
-	int arg_int     = 0;
+	float arg_float;
+	int arg_int;
+	int16_t rx_byte;
+	uint8_t cmd_ind;
+	uint8_t cmd_found_flag = 0;
 	
 	/*If cli is disabled do not run*/
 	if(cli.conf.enable == CLI_DISABLED) return;
@@ -127,22 +118,22 @@ void cli_task(void)
 	}
 
 	//grab from received buffer
-	cli.rx_byte = cli.conf.rx_byte_fptr();
+	rx_byte = cli.conf.rx_byte_fptr();
 
 	//if we have received data
-	if(cli.rx_byte != -1)
+	if(rx_byte != -1)
 	{
 		//echo character but suppress tab if enabled
-		if((cli.rx_byte != '\t') && (cli.conf.echo_enable == CLI_ECHO_ENABLED))
+		if((rx_byte != '\t') && (cli.conf.echo_enable == CLI_ECHO_ENABLED))
 		{
-			echo_str[0] = (char)cli.rx_byte;
+			echo_str[0] = (char)rx_byte;
 			echo_str[1] = 0;
 			cli.conf.tx_string_fprt(echo_str);
 		}
 
 		//////////////////////////////ADD TO LOCAL BUFFER//////////////////////////////
 		//if data is ASCII printable text
-		if((cli.rx_byte >= ' ') && (cli.rx_byte <= '~'))
+		if((rx_byte >= ' ') && (rx_byte <= '~'))
 		{
 			//if exceed buffer length minus one for null terminator
 			//aways leave last null terminator
@@ -163,14 +154,14 @@ void cli_task(void)
 			else
 			{
 				//put in local buffer
-				cli.buffer[cli.buffer_ind] = (char)cli.rx_byte;
+				cli.buffer[cli.buffer_ind] = (char)rx_byte;
 				cli.buffer_ind++;
 			}
 		}
 
 		//////////////////////////////DELETE FROM LOCAL BUFFER//////////////////////////////
 		//if backspace and there is data to backspace out
-		else if(cli.rx_byte == '\b' && cli.buffer_ind != 0)
+		else if(rx_byte == '\b' && cli.buffer_ind != 0)
 		{
 			//remove one from local buffer
 			cli.buffer_ind--;
@@ -178,7 +169,7 @@ void cli_task(void)
 		}
 
 		//////////////////////////////TAB LAST COMMAND//////////////////////////////
-		else if(cli.rx_byte == '\t')
+		else if(rx_byte == '\t')
 		{
 			cli_strncpy(cli.buffer, sizeof(cli.buffer), cli.prev_cmd, sizeof(cli.prev_cmd)); //copy last valid command
 			cli.buffer_ind = (uint16_t)strlen(cli.prev_cmd);  //update index
@@ -188,97 +179,54 @@ void cli_task(void)
 
 		//////////////////////////////COMMAND ENTERED (TOKENIZATION)//////////////////////////////
 		//if enter key pressed and buffer has some data
-		else if(((cli.rx_byte == '\r') || (cli.rx_byte == '\n')) && (cli.buffer_ind != 0))
+		else if(((rx_byte == '\r') || (rx_byte == '\n')) && (cli.buffer_ind != 0))
 		{
 			send_new_line();
 			
 			/*Send prompt next pass*/
 			cli.prompt_sent_flag = 0;
-			
-			//clear token index
-			cli.token_ind = 0;
-			
-			//clear token array
-			memset(cli.token_arr, 0, sizeof(cli.token_arr));
 
-			//get first token
-			cli.token = strtok(cli.buffer, CLI_CMD_DELIMITER);
+			//get first token (command name)
+			cli.cmd = strtok(cli.buffer, CLI_CMD_DELIMITER); //puts null at delimiter
 			
-			//get string after first token
-			if(cli.token != NULL)
+			/*if the cmd tokens found, then search for a command*/
+			if(cli.cmd != NULL)
 			{
-				//since strtok places a null at the first delimiter
-				//we need to find the last null start coping from there
-				cli_strncpy(
-								cli.strn,                                                          //dest
-								sizeof(cli.strn),                                                  //size of dest
-								(strrchr(cli.token, 0) + 1),                                       //src - right after token null
-								(sizeof(cli.buffer) - (strnlen(cli.buffer, sizeof(cli.buffer)) + 1)) //size of src - (buffer num of bytes - ((len of first token + 1for null))
-						);
-			}
+				//get arg ptr
+				cli.arg = strrchr(cli.cmd, 0) + 1; //gets ptr to 1 after the delimiter that got converted to null
 
-			//get tokens from local received buffer and put into local token array
-			while(cli.token != NULL)
-			{	
-				//make sure we don't exceed the max number of tokens
-				//break out if we exceed the max
-				if(cli.token_ind >= MAX_NUM_TOKENS)
-				{
-					break; //leave while loop
-				}
-				
-				//if token is too large
-				if(strlen(cli.token) >= CLI_MAX_LEN_CMD)
-				{
-					break; //leave while loop
-				}
-				
-				//copys token to token array
-				else
-				{
-					cli.token_arr[cli.token_ind] = cli.token;
-				}
-
-				//get next token
-				cli.token = strtok(NULL, CLI_CMD_DELIMITER);
-				cli.token_ind++;
-			}
-
-			/*if there are tokens found, then search for a command*/
-			if(cli.token_ind > 0)
-			{
 				//////////////////////////////COMMAND SEARCH AND COMMAND HANDELING//////////////////////////////
-				for (cli.cmd_ind = 0; cli.cmd_ind < cli.num_cmds_added; cli.cmd_ind++)
+				for(cmd_ind = 0; cmd_ind < cli.num_cmds_added; cmd_ind++)
 				{
 					//if first entry of local token array matches one of the commands
-					if (!strncmp(cli.token_arr[COMMAND], cli.conf.cmd_list[cli.cmd_ind].command_name, CLI_MAX_LEN_CMD))
+					if (!strncmp(cli.cmd, cli.conf.cmd_list[cmd_ind].command_name, CLI_MAX_LEN_CMD))
 					{
 						//run command based on type
-						switch(cli.conf.cmd_list[cli.cmd_ind].arg_type)
+						switch(cli.conf.cmd_list[cmd_ind].arg_type)
 						{
 							case CLI_INT:
-								if (cli.token_arr[ARGUMENT] != NULL) //to prevent illegal mem access
-									arg_int = atoi(cli.token_arr[ARGUMENT]);
-								cli.conf.cmd_list[cli.cmd_ind].cmd_int(arg_int);
+								if (cli.arg != NULL) //to prevent illegal mem access
+									arg_int = atoi(cli.arg);
+								cli.conf.cmd_list[cmd_ind].cmd_int(arg_int);
 								break;
 							case CLI_FLOAT:
-								if (cli.token_arr[ARGUMENT] != NULL) //to prevent illegal mem access
-									arg_float = (float)atof(cli.token_arr[ARGUMENT]);
-								cli.conf.cmd_list[cli.cmd_ind].cmd_float(arg_float);
+								if (cli.arg != NULL) //to prevent illegal mem access
+									arg_float = (float)atof(cli.arg);
+								cli.conf.cmd_list[cmd_ind].cmd_float(arg_float);
 								break;
 							case CLI_STRING:
-								cli.conf.cmd_list[cli.cmd_ind].cmd_str(cli.strn);
+								cli.conf.cmd_list[cmd_ind].cmd_str(cli.arg);
 								break;
 							default:
-								cli.conf.cmd_list[cli.cmd_ind].cmd_void();
+								cli.conf.cmd_list[cmd_ind].cmd_void();
 								break;
 						}
 
 						//to show that we found a command
-						cli.cmd_found_flag = 1;
+						cmd_found_flag = 1;
 
 						//records previous command for tab complete
-						cli_strncpy(cli.prev_cmd, sizeof(cli.prev_cmd), cli.token_arr[COMMAND], CLI_MAX_LEN_CMD);
+						cli_strncpy(cli.prev_cmd, sizeof(cli.prev_cmd), cli.cmd, CLI_MAX_LEN_CMD);
 
 						break; //break out of for loop if command found
 					}
@@ -293,18 +241,15 @@ void cli_task(void)
 			memset(cli.buffer, 0, sizeof(cli.buffer)); //todo: remove memset?
 
 			//prints if no command found
-			if(cli.cmd_found_flag == 0)
+			if(cmd_found_flag == 0)
 			{
 				cli.conf.tx_string_fprt("ERROR: NO COMMAND FOUND TYPE \"help\"");
 				cli.conf.tx_string_fprt(CLI_NEW_LINE);
 			}
-			
-			//reset flag
-			cli.cmd_found_flag  =  0;
 		}
 		
 		//Put newline on empty enter press
-		else if((cli.rx_byte == '\r') || (cli.rx_byte == '\n'))
+		else if((rx_byte == '\r') || (rx_byte == '\n'))
 		{
 			send_new_line();
 
@@ -344,12 +289,14 @@ void cli_print(const char *null_term_str)
 ******************************************************************************/
 void cli_help_command(void)
 {
+	uint8_t cmd_ind;
+
 	char str[CLI_MAX_LEN_CMD + 2 + CLI_CMD_MAX_HELP_LENGTH + sizeof(CLI_NEW_LINE)];
 
-	for (cli.cmd_ind = 0; cli.cmd_ind < cli.num_cmds_added; cli.cmd_ind++)
+	for (cmd_ind = 0; cmd_ind < cli.num_cmds_added; cmd_ind++)
 	{
 		//prints command name
-		snprintf(str, sizeof(str), "%s: %s%s", cli.conf.cmd_list[cli.cmd_ind].command_name, cli.conf.cmd_list[cli.cmd_ind].help, CLI_NEW_LINE);
+		snprintf(str, sizeof(str), "%s: %s%s", cli.conf.cmd_list[cmd_ind].command_name, cli.conf.cmd_list[cmd_ind].help, CLI_NEW_LINE);
 		cli.conf.tx_string_fprt(str);
 	}
 }
