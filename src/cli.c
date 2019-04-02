@@ -17,7 +17,6 @@
 *                                             DEFINES
 *************************************************^************************************************/
 #define MAX_NUM_TOKENS     2                                                        //Defines the number of tokens involved in a command ***DO NOT CHANGE***
-#define BUFFER_LEN        ((MAX_NUM_TOKENS * CLI_MAX_LEN_CMD_ARG) + CLI_MAX_STRN_LEN)    //Size for buffer that accumulates the command and argument
 
 //only used for local_token_array
 enum
@@ -33,15 +32,15 @@ enum
 //cli data
 struct
 {
-	char buffer[BUFFER_LEN];
+	char buffer[CLI_MAX_BUFF_LEN];
 	uint16_t buffer_ind;
-	char prev_cmd[CLI_MAX_LEN_CMD_ARG];
+	char prev_cmd[CLI_MAX_LEN_CMD];
 	int16_t rx_byte;
 	char *token;
 	uint8_t token_ind;
 	uint8_t cmd_ind;
 	uint8_t cmd_found_flag;
-	char strn[CLI_MAX_STRN_LEN];
+	char strn[CLI_MAX_BUFF_LEN];
 	char *token_arr[MAX_NUM_TOKENS];
 	
 	cli_conf_t conf;
@@ -147,11 +146,12 @@ void cli_task(void)
 		{
 			//if exceed buffer length minus one for null terminator
 			//aways leave last null terminator
-			if(cli.buffer_ind >= BUFFER_LEN - 1)
+			if(cli.buffer_ind >= CLI_MAX_BUFF_LEN - 1)
 			{
 				//erase whole buffer
 				cli.buffer_ind = 0;
-				memset(cli.buffer, 0, BUFFER_LEN); //clear buffer
+				//todo: remove memset?
+				memset(cli.buffer, 0, sizeof(cli.buffer)); //clear buffer
 				
 				cli.conf.tx_string_fprt(CLI_NEW_LINE); //These new lines need to stay on
 				cli.conf.tx_string_fprt("ERROR: COMMAND LENGTH");
@@ -228,7 +228,7 @@ void cli_task(void)
 				}
 				
 				//if token is too large
-				if(strlen(cli.token) >= CLI_MAX_LEN_CMD_ARG)
+				if(strlen(cli.token) >= CLI_MAX_LEN_CMD)
 				{
 					break; //leave while loop
 				}
@@ -251,7 +251,7 @@ void cli_task(void)
 				for (cli.cmd_ind = 0; cli.cmd_ind < cli.num_cmds_added; cli.cmd_ind++)
 				{
 					//if first entry of local token array matches one of the commands
-					if (!strncmp(cli.token_arr[COMMAND], cli.conf.cmd_list[cli.cmd_ind].command_name, CLI_MAX_LEN_CMD_ARG))
+					if (!strncmp(cli.token_arr[COMMAND], cli.conf.cmd_list[cli.cmd_ind].command_name, CLI_MAX_LEN_CMD))
 					{
 						//run command based on type
 						switch(cli.conf.cmd_list[cli.cmd_ind].arg_type)
@@ -278,7 +278,7 @@ void cli_task(void)
 						cli.cmd_found_flag = 1;
 
 						//records previous command for tab complete
-						cli_strncpy(cli.prev_cmd, sizeof(cli.prev_cmd), cli.token_arr[COMMAND], CLI_MAX_LEN_CMD_ARG);
+						cli_strncpy(cli.prev_cmd, sizeof(cli.prev_cmd), cli.token_arr[COMMAND], CLI_MAX_LEN_CMD);
 
 						break; //break out of for loop if command found
 					}
@@ -290,7 +290,7 @@ void cli_task(void)
 
 			//clear local received buffer, done to ensure strtok has null for next time
 			//has to be done AFTER done with 'token', and 'token_arr' because they are pointing to 'buffer'
-			memset(cli.buffer, 0, BUFFER_LEN);
+			memset(cli.buffer, 0, sizeof(cli.buffer)); //todo: remove memset?
 
 			//prints if no command found
 			if(cli.cmd_found_flag == 0)
@@ -344,7 +344,7 @@ void cli_print(const char *null_term_str)
 ******************************************************************************/
 void cli_help_command(void)
 {
-	char str[CLI_MAX_LEN_CMD_ARG + 2 + CLI_CMD_MAX_HELP_LENGTH + sizeof(CLI_NEW_LINE)];
+	char str[CLI_MAX_LEN_CMD + 2 + CLI_CMD_MAX_HELP_LENGTH + sizeof(CLI_NEW_LINE)];
 
 	for (cli.cmd_ind = 0; cli.cmd_ind < cli.num_cmds_added; cli.cmd_ind++)
 	{

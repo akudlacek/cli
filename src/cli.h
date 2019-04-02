@@ -15,8 +15,8 @@
 /**************************************************************************************************
 *                                             DEFINES
 *************************************************^************************************************/
-#define CLI_MAX_LEN_CMD_ARG      10    //Max length of each token, should be greater than largest cmd name or argument including null terminator
-#define CLI_MAX_STRN_LEN         255   //Largest string for arg type: CLI_STRING including null terminator
+#define CLI_MAX_LEN_CMD          10    //Max length cmd name, including null terminator
+#define CLI_MAX_BUFF_LEN         255   //Max total length of command name and arguments/string input, including null terminator
 
 /*HELP*/
 #define CLI_CMD_MAX_HELP_LENGTH  64    //if this is zero, there will be no help
@@ -69,7 +69,7 @@ typedef enum
 /*Command configuration struct*/
 typedef struct
 {
-	char command_name[CLI_MAX_LEN_CMD_ARG]; //holds command keyword
+	char command_name[CLI_MAX_LEN_CMD];     //holds command keyword
 	cli_arg_type_t arg_type;                //holds the argument type
 
 	union cmd_fptr                          //Pointer to your command function, multiple argument types handled
