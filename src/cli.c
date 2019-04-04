@@ -105,7 +105,6 @@ void cli_task(void)
 	int arg_int;
 	int16_t rx_byte;
 	uint8_t cmd_ind;
-	uint8_t cmd_found_flag = 0;
 
 	char *saveptr;
 	
@@ -224,9 +223,6 @@ void cli_task(void)
 								break;
 						}
 
-						//to show that we found a command
-						cmd_found_flag = 1;
-
 						//records previous command for tab complete
 						cli_strncpy(cli.prev_cmd, sizeof(cli.prev_cmd), cli.cmd, CLI_MAX_LEN_CMD);
 
@@ -242,8 +238,8 @@ void cli_task(void)
 			//has to be done AFTER done with 'token', and 'token_arr' because they are pointing to 'buffer'
 			memset(cli.buffer, 0, sizeof(cli.buffer)); //todo: remove memset?
 
-			//prints if no command found
-			if(cmd_found_flag == 0)
+			//prints if no command found, when cmd_ind is past the end of the list of commands
+			if(cmd_ind == cli.num_cmds_added)
 			{
 				cli.conf.tx_string_fprt("ERROR: NO COMMAND FOUND TYPE \"help\"");
 				cli.conf.tx_string_fprt(CLI_NEW_LINE);
