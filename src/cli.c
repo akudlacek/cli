@@ -105,7 +105,6 @@ void cli_task(void)
 	int arg_int;
 	int16_t rx_byte;
 	uint8_t cmd_ind;
-
 	char *saveptr;
 	
 	/*If cli is disabled do not run*/
@@ -140,10 +139,9 @@ void cli_task(void)
 			//aways leave last null terminator
 			if(cli.buffer_ind >= CLI_MAX_BUFF_LEN - 1)
 			{
-				//erase whole buffer
+				//reset buffer index
 				cli.buffer_ind = 0;
-				//todo: remove memset?
-				memset(cli.buffer, 0, sizeof(cli.buffer)); //clear buffer
+				cli.buffer[cli.buffer_ind] = 0; //null terminate
 				
 				cli.conf.tx_string_fprt(CLI_NEW_LINE); //These new lines need to stay on
 				cli.conf.tx_string_fprt("ERROR: COMMAND LENGTH");
@@ -156,6 +154,7 @@ void cli_task(void)
 			{
 				//put in local buffer
 				cli.buffer[cli.buffer_ind] = (char)rx_byte;
+				cli.buffer[cli.buffer_ind + 1] = 0; //null terminate
 				cli.buffer_ind++;
 			}
 		}
@@ -166,7 +165,7 @@ void cli_task(void)
 		{
 			//remove one from local buffer
 			cli.buffer_ind--;
-			cli.buffer[cli.buffer_ind] = 0;
+			cli.buffer[cli.buffer_ind] = 0; //null terminate
 		}
 
 		//////////////////////////////TAB LAST COMMAND//////////////////////////////
@@ -231,12 +230,9 @@ void cli_task(void)
 				}
 			}
 			
-			//since static, reset to prepare for next command
+			//reset buffer index
 			cli.buffer_ind = 0;
-
-			//clear local received buffer, done to ensure strtok has null for next time
-			//has to be done AFTER done with 'token', and 'token_arr' because they are pointing to 'buffer'
-			memset(cli.buffer, 0, sizeof(cli.buffer)); //todo: remove memset?
+			cli.buffer[cli.buffer_ind] = 0; //null terminate
 
 			//prints if no command found, when cmd_ind is past the end of the list of commands
 			if(cmd_ind == cli.num_cmds_added)
@@ -352,31 +348,18 @@ int cli_strncpy(char *dest, size_t dest_size, const char *src, size_t src_size)
 *  \brief CLI STRTOK_R
 *
 *  \note https://code.woboq.org/userspace/glibc/string/strtok_r.c.html
+* Reentrant string tokenizer.
+* Parse S into tokens separated by characters in DELIM.
+*   If S is NULL, the saved pointer in SAVE_PTR is used as
+*   the next starting point.  For example:
+*		char s[] = "-abc-=-def";
+*		char *sp;
+*		x = strtok_r(s, "-", &sp);        // x = "abc", sp = "=-def"
+*		x = strtok_r(NULL, "-=", &sp);        // x = "def", sp = NULL
+*		x = strtok_r(NULL, "=", &sp);        // x = NULL
+*				// s = "abc\0-def\0"
+*
 ******************************************************************************/
-/* Reentrant string tokenizer.  Generic version.
-   Copyright (C) 1991-2019 Free Software Foundation, Inc.
-   This file is part of the GNU C Library.
-   The GNU C Library is free software; you can redistribute it and/or
-   modify it under the terms of the GNU Lesser General Public
-   License as published by the Free Software Foundation; either
-   version 2.1 of the License, or (at your option) any later version.
-   The GNU C Library is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Lesser General Public License for more details.
-   You should have received a copy of the GNU Lesser General Public
-   License along with the GNU C Library; if not, see
-   <http://www.gnu.org/licenses/>.  */
-/* Parse S into tokens separated by characters in DELIM.
-   If S is NULL, the saved pointer in SAVE_PTR is used as
-   the next starting point.  For example:
-		char s[] = "-abc-=-def";
-		char *sp;
-		x = strtok_r(s, "-", &sp);        // x = "abc", sp = "=-def"
-		x = strtok_r(NULL, "-=", &sp);        // x = "def", sp = NULL
-		x = strtok_r(NULL, "=", &sp);        // x = NULL
-				// s = "abc\0-def\0"
-*/
 char * cli_strtok_r(char *s, const char *delim, char **save_ptr)
 {
 	char *end;
