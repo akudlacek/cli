@@ -201,18 +201,18 @@ void cli_task(void)
 				for(cmd_ind = 0; cmd_ind < cli.num_cmds_added; cmd_ind++)
 				{
 					//if first entry of local token array matches one of the commands
-					if (!strncmp(cli.cmd, cli.conf.cmd_list[cmd_ind].command_name, CLI_MAX_LEN_CMD))
+					if(!strncmp(cli.cmd, cli.conf.cmd_list[cmd_ind].command_name, CLI_MAX_LEN_CMD))
 					{
 						//run command based on type
 						switch(cli.conf.cmd_list[cmd_ind].arg_type)
 						{
 							case CLI_INT:
-								if (cli.arg != NULL) //to prevent illegal mem access
+								if(cli.arg != NULL) //to prevent illegal mem access
 									arg_int = atoi(cli.arg);
 								cli.conf.cmd_list[cmd_ind].cmd_int(arg_int);
 								break;
 							case CLI_FLOAT:
-								if (cli.arg != NULL) //to prevent illegal mem access
+								if(cli.arg != NULL) //to prevent illegal mem access
 									arg_float = (float)atof(cli.arg);
 								cli.conf.cmd_list[cmd_ind].cmd_float(arg_float);
 								break;
