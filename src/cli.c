@@ -48,7 +48,6 @@ static const cli_command_t default_cmd_lsit[] =
 *************************************************^************************************************/
 static int16_t default_rx_byte(void);
 static void default_tx_str(const char *str);
-
 static void send_new_line(void);
 
 
@@ -285,12 +284,12 @@ void cli_help_command(void)
 {
 	uint8_t cmd_ind;
 
-	char str[CLI_MAX_LEN_CMD + 2 + CLI_CMD_MAX_HELP_LENGTH + sizeof(CLI_NEW_LINE)];
+	char str[CLI_MAX_LEN_CMD + 1 + CLI_CMD_MAX_HELP_LENGTH + sizeof(CLI_NEW_LINE)];
 
 	for (cmd_ind = 0; cmd_ind < cli.num_cmds_added; cmd_ind++)
 	{
 		//prints command name
-		snprintf(str, sizeof(str), "%s: %s%s", cli.conf.cmd_list[cmd_ind].command_name, cli.conf.cmd_list[cmd_ind].help, CLI_NEW_LINE);
+		snprintf(str, sizeof(str), "%-*s %s%s", CLI_MAX_LEN_CMD, cli.conf.cmd_list[cmd_ind].command_name, cli.conf.cmd_list[cmd_ind].help, CLI_NEW_LINE);
 		cli.conf.tx_string_fprt(str);
 	}
 }
