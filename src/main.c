@@ -35,12 +35,15 @@ char tmp_str[100];
 
 static const cli_command_t cli_cmd_list[] =
 {
-	//cmd name, argument type, function pointer, help string
-	{"help",  CLI_NO_ARG, .cmd_void = cli_help_command,  HELP("Lists the commands available")},
-	{"void",  CLI_NO_ARG, .cmd_void = void_func_ex,      HELP("void just runs the function")},
-	{"int",   CLI_INT,    .cmd_int = int_func_ex,        HELP("e.g. int -4")},
-	{"float", CLI_FLOAT,  .cmd_float = float_func_ex,    HELP("e.g. float 9.87654")},
-	{"str",   CLI_STRING, .cmd_str = str_func_ex,        HELP("type str followed by your string")},
+	//cmd name, fptr, help string
+	CLI_HELP_CMD_LIST_ENTRY,
+
+	{"help",  CLI_VOID_FPTR(cli_help_command),  HELP("Lists the commands available")},
+	{"void",  CLI_VOID_FPTR(void_func_ex),      HELP("void just runs the function")},
+	{"int",   CLI_INT_FPTR(int_func_ex),        HELP("e.g. int -4")},
+	{"float", CLI_FLOAT_FPTR(float_func_ex),    HELP("e.g. float 9.87654")},
+	{"str",   CLI_STRING_FPTR(str_func_ex),     HELP("type str followed by your string")},
+
 	CLI_CMD_LIST_END                                             // must be LAST
 };
 

@@ -22,7 +22,7 @@
 *                                            VARIABLES
 *************************************************^************************************************/
 //cli data
-struct
+static struct
 {
 	char buffer[CLI_MAX_BUFF_LEN];
 	uint16_t buffer_ind;
@@ -35,11 +35,11 @@ struct
 	uint32_t num_cmds_added;
 
 	uint8_t prompt_sent_flag;
-} cli;
+} cli = {0};
 
-static const cli_command_t default_cmd_lsit[] =
+static const cli_command_t default_cmd_list[1] =
 {
-	CLI_CMD_LIST_END                                             // must be LAST
+	CLI_CMD_LIST_END // must be LAST
 };
 
 
@@ -48,7 +48,6 @@ static const cli_command_t default_cmd_lsit[] =
 *************************************************^************************************************/
 static int16_t default_rx_byte(void);
 static void default_tx_str(const char *str);
-static void send_new_line(void);
 
 
 /**************************************************************************************************
@@ -64,8 +63,8 @@ void cli_get_config_defaults(cli_conf_t *cli_conf)
 	cli_conf->rx_byte_fptr    = default_rx_byte;
 	cli_conf->tx_string_fprt  = default_tx_str;
 	cli_conf->enable          = CLI_ENABLED;
-	cli_conf->echo_enable     = CLI_ECHO_DISABLED;
-	cli_conf->cmd_list        = default_cmd_lsit;
+	cli_conf->echo_enable     = CLI_ECHO_ENABLED;
+	cli_conf->cmd_list        = default_cmd_list;
 }
 
 /******************************************************************************
@@ -88,6 +87,7 @@ void cli_init(cli_conf_t cli_conf)
 	//looks for first null in first char of string of the command name
 	while(cli.conf.cmd_list[cli.num_cmds_added].command_name[0] != 0)
 	{
+		//note: this will not check for null function pointers
 		cli.num_cmds_added++;
 	}
 }
@@ -100,10 +100,11 @@ void cli_init(cli_conf_t cli_conf)
 void cli_task(void)
 {
 	char echo_str[2];
-	float arg_float;
-	int arg_int;
+	float arg_float = 0;
+	int arg_int = 0;
+	unsigned long arg_ulint = 0;
 	int16_t rx_byte;
-	uint8_t cmd_ind;
+	uint8_t cmd_ind = 0;
 	char *saveptr;
 	
 	/*If cli is disabled do not run*/
@@ -122,8 +123,8 @@ void cli_task(void)
 	//if we have received data
 	if(rx_byte != -1)
 	{
-		//echo character but suppress tab if enabled
-		if((rx_byte != '\t') && (cli.conf.echo_enable == CLI_ECHO_ENABLED))
+		//echo character but suppress tab and backspace if enabled
+		if((rx_byte != '\t') && (rx_byte != '\b') && (cli.conf.echo_enable == CLI_ECHO_ENABLED))
 		{
 			echo_str[0] = (char)rx_byte;
 			echo_str[1] = 0;
@@ -140,7 +141,10 @@ void cli_task(void)
 			{
 				//reset buffer index
 				cli.buffer_ind = 0;
-				cli.buffer[cli.buffer_ind] = 0; //null terminate
+				 //necessary to clear whole buffer because there could be garbage after the
+				 //cmd name entry that can be interpreted as an argument input
+				 //this also null terminates
+				memset(cli.buffer, 0, sizeof(cli.buffer));
 				
 				cli.conf.tx_string_fprt(CLI_NEW_LINE); //These new lines need to stay on
 				cli.conf.tx_string_fprt("ERROR: COMMAND LENGTH");
@@ -165,6 +169,9 @@ void cli_task(void)
 			//remove one from local buffer
 			cli.buffer_ind--;
 			cli.buffer[cli.buffer_ind] = 0; //null terminate
+			
+			//send backspace
+			cli.conf.tx_string_fprt("\b");
 		}
 
 		//////////////////////////////TAB LAST COMMAND//////////////////////////////
@@ -180,7 +187,7 @@ void cli_task(void)
 		//if enter key pressed and buffer has some data
 		else if(((rx_byte == '\r') || (rx_byte == '\n')) && (cli.buffer_ind != 0))
 		{
-			send_new_line();
+			cli.conf.tx_string_fprt(CLI_NEW_LINE);
 			
 			/*Send prompt next pass*/
 			cli.prompt_sent_flag = 0;
@@ -200,29 +207,47 @@ void cli_task(void)
 					//if first entry of local token array matches one of the commands
 					if(!strncmp(cli.cmd, cli.conf.cmd_list[cmd_ind].command_name, CLI_MAX_LEN_CMD))
 					{
-						//run command based on type
-						switch(cli.conf.cmd_list[cmd_ind].arg_type)
+						//Check for valid function pointer
+						if(cli.conf.cmd_list[cmd_ind].fptr.cmd_void == NULL)
 						{
-							case CLI_INT:
-								if(cli.arg != NULL) //to prevent illegal mem access
-									arg_int = atoi(cli.arg);
-								cli.conf.cmd_list[cmd_ind].cmd_int(arg_int);
-								break;
-							case CLI_FLOAT:
-								if(cli.arg != NULL) //to prevent illegal mem access
-									arg_float = (float)atof(cli.arg);
-								cli.conf.cmd_list[cmd_ind].cmd_float(arg_float);
-								break;
-							case CLI_STRING:
-								cli.conf.cmd_list[cmd_ind].cmd_str(cli.arg);
-								break;
-							default:
-								cli.conf.cmd_list[cmd_ind].cmd_void();
-								break;
+							cli.conf.tx_string_fprt("ERROR: NULL FUNCTION POINTER");
+							cli.conf.tx_string_fprt(CLI_NEW_LINE);
 						}
+						else
+						{
+							//run command based on type
+							switch(cli.conf.cmd_list[cmd_ind].arg_type)
+							{
+								if(cli.arg != NULL) //to prevent illegal mem access
+								{
+									case CLI_INT:
+									arg_int = atoi(cli.arg);
+									cli.conf.cmd_list[cmd_ind].fptr.cmd_int(arg_int);
+									break;
+									case CLI_UINT8:
+									arg_int = atoi(cli.arg);
+									cli.conf.cmd_list[cmd_ind].fptr.cmd_uint8((uint8_t)arg_int);
+									break;
+									case CLI_ULINT:
+									arg_ulint = strtoul(cli.arg, NULL, 0);
+									cli.conf.cmd_list[cmd_ind].fptr.cmd_ulint(arg_ulint);
+									break;
+									case CLI_FLOAT:
+									arg_float = (float)atof(cli.arg);
+									cli.conf.cmd_list[cmd_ind].fptr.cmd_float(arg_float);
+									break;
+								}
+								case CLI_STRING:
+								cli.conf.cmd_list[cmd_ind].fptr.cmd_str(cli.arg);
+								break;
+								default:
+								cli.conf.cmd_list[cmd_ind].fptr.cmd_void();
+								break;
+							}
 
-						//records previous command for tab complete
-						cli_strncpy(cli.prev_cmd, sizeof(cli.prev_cmd), cli.cmd, CLI_MAX_LEN_CMD);
+							//records previous command for tab complete
+							cli_strncpy(cli.prev_cmd, sizeof(cli.prev_cmd), cli.cmd, CLI_MAX_LEN_CMD);
+						}
 
 						break; //break out of for loop if command found
 					}
@@ -231,11 +256,15 @@ void cli_task(void)
 			
 			//reset buffer index
 			cli.buffer_ind = 0;
-			cli.buffer[cli.buffer_ind] = 0; //null terminate
+			//necessary to clear whole buffer because there could be garbage after the
+			//cmd name entry that can be interpreted as an argument input
+			//this also null terminates
+			memset(cli.buffer, 0, sizeof(cli.buffer));
 
 			//prints if no command found, when cmd_ind is past the end of the list of commands
 			if(cmd_ind == cli.num_cmds_added)
 			{
+				//This advice is only valid if the help command is present in the command table
 				cli.conf.tx_string_fprt("ERROR: NO COMMAND FOUND TYPE \"help\"");
 				cli.conf.tx_string_fprt(CLI_NEW_LINE);
 			}
@@ -244,7 +273,7 @@ void cli_task(void)
 		//Put newline on empty enter press
 		else if((rx_byte == '\r') || (rx_byte == '\n'))
 		{
-			send_new_line();
+			cli.conf.tx_string_fprt(CLI_NEW_LINE);
 
 			/*Send prompt next pass*/
 			cli.prompt_sent_flag = 0;
@@ -272,7 +301,11 @@ void cli_print(const char *null_term_str)
 	/*If cli is disabled do not run*/
 	if(cli.conf.enable == CLI_DISABLED) return;
 	
+	cli.conf.tx_string_fprt(CLI_NEW_LINE);
 	cli.conf.tx_string_fprt(null_term_str);
+	
+	/*Send prompt next pass*/
+	cli.prompt_sent_flag = 0;
 }
 
 /******************************************************************************
@@ -286,7 +319,7 @@ void cli_help_command(void)
 
 	char str[CLI_MAX_LEN_CMD + 1 + CLI_CMD_MAX_HELP_LENGTH + sizeof(CLI_NEW_LINE)];
 
-	for (cmd_ind = 0; cmd_ind < cli.num_cmds_added; cmd_ind++)
+	for(cmd_ind = 0; cmd_ind < cli.num_cmds_added; cmd_ind++)
 	{
 		//prints command name
 		snprintf(str, sizeof(str), "%-*s %s%s", CLI_MAX_LEN_CMD, cli.conf.cmd_list[cmd_ind].command_name, cli.conf.cmd_list[cmd_ind].help, CLI_NEW_LINE);
@@ -413,14 +446,3 @@ static void default_tx_str(const char *str)
 	//empty
 }
 
-/******************************************************************************
-*  \brief Send new line
-*
-*  \note function so new line can be turned on and off with
-*        CLI_ECHO_ENABLED/CLI_ECHO_DISABLED
-******************************************************************************/
-static void send_new_line(void)
-{
-	if(cli.conf.echo_enable == CLI_ECHO_ENABLED)
-		cli.conf.tx_string_fprt(CLI_NEW_LINE);
-}

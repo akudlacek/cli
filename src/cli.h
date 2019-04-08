@@ -10,6 +10,7 @@
 
 
 #include <stdint.h>
+#include <stdlib.h>
 
 
 /**************************************************************************************************
@@ -29,8 +30,6 @@
 #define CLI_CMD_DELIMITER        " "   //Delimiters for tokens
 #define CLI_PROMPT              "> "   //The prompt for user input
 #define CLI_NEW_LINE          "\r\n"   //New line thats used within cli
-
-#define CLI_CMD_LIST_END  {0, 0, 0, 0} //Last entry for command list
 
 /*CLI return status*/
 typedef enum
@@ -60,8 +59,10 @@ typedef enum
 /*Cli argument type*/
 typedef enum
 {
-	CLI_NO_ARG,
+	CLI_VOID,
 	CLI_INT,
+	CLI_UINT8,
+	CLI_ULINT,
 	CLI_FLOAT,
 	CLI_STRING
 } cli_arg_type_t;
@@ -70,15 +71,18 @@ typedef enum
 typedef struct
 {
 	char command_name[CLI_MAX_LEN_CMD];     //holds command keyword
+	
 	cli_arg_type_t arg_type;                //holds the argument type
 
-	union cmd_fptr                          //Pointer to your command function, multiple argument types handled
+	union                                   //Pointer to your command function, multiple argument types handled
 	{
 		void(*cmd_void)(void);
+		void(*cmd_uint8)(uint8_t);
 		void(*cmd_int)(int);
+		void(*cmd_ulint)(unsigned long);
 		void(*cmd_float)(float);
 		void(*cmd_str)(const char *);
-	};
+	} fptr;
 
 #if CLI_CMD_MAX_HELP_LENGTH > 0
 	char help[CLI_CMD_MAX_HELP_LENGTH];     //Holds help string
@@ -86,6 +90,22 @@ typedef struct
 	uint8_t junk;
 #endif
 } cli_command_t;
+
+/*Function pointer macro for helping keep table clean
+ *also puts function arg type in table  
+ *fptr is a union it needs to be explicitly declared*/
+#define CLI_VOID_FPTR(fptr_in)    CLI_VOID,   .fptr = {.cmd_void  = fptr_in}
+#define CLI_INT_FPTR(fptr_in)     CLI_INT,    .fptr = {.cmd_int   = fptr_in}
+#define CLI_UINT8_FPTR(fptr_in)   CLI_UINT8,  .fptr = {.cmd_uint8 = fptr_in}
+#define CLI_ULINT_FPTR(fptr_in)   CLI_ULINT,  .fptr = {.cmd_ulint = fptr_in}
+#define CLI_FLOAT_FPTR(fptr_in)   CLI_FLOAT,  .fptr = {.cmd_float = fptr_in}
+#define CLI_STRING_FPTR(fptr_in)  CLI_STRING, .fptr = {.cmd_str   = fptr_in}
+
+/*End of command list*/
+#define CLI_CMD_LIST_END {"", CLI_VOID_FPTR(NULL), HELP("")} //Last entry for command list
+
+/*Help command entry macro*/
+#define CLI_HELP_CMD_LIST_ENTRY {"help", CLI_VOID_FPTR(cli_help_command), HELP("Prints a list of available commands")}
 
 /*CLI configuration struct*/
 typedef	struct
