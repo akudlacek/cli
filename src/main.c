@@ -27,14 +27,14 @@ static void duck_func_ex(void);
 
 static void cmd_line_init(void);
 
-int16_t rx_byte_wrapper(void);
-void tx_string_wrapper(const char *string_ptr);
+static int16_t rx_byte_wrapper(void);
+static void tx_string_wrapper(const char *string_ptr);
 
 
 /**************************************************************************************************
 *                                            VARIABLES
 *************************************************^************************************************/
-char tmp_str[100];
+static char tmp_str[100];
 
 
 /* Available function types
@@ -97,7 +97,7 @@ int main(void)
 *
 *  \note
 ******************************************************************************/
-void void_func_ex(void)
+static void void_func_ex(void)
 {
 	cli_print("void_func_ex was entered\r\n");
 	snprintf(tmp_str, sizeof(tmp_str), "this is void func\r\n");
@@ -217,7 +217,7 @@ static void cmd_line_init(void)
 *
 *  \note return -1 for no data or >=0 for ascii data
 ******************************************************************************/
-int16_t rx_byte_wrapper(void)
+static int16_t rx_byte_wrapper(void)
 {
 	int rx_byte;
 
@@ -238,7 +238,7 @@ int16_t rx_byte_wrapper(void)
 *
 *  \note transmit null terminated string
 ******************************************************************************/
-void tx_string_wrapper(const char *string_ptr)
+static void tx_string_wrapper(const char *string_ptr)
 {
 	printf("%s", string_ptr);
 }
