@@ -56,7 +56,7 @@ static const cli_command_t cli_cmd_list[] =
 	{"ulint", CLI_ULINT_FPTR(ulint_func_ex),    HELP("e.g. unsigned long 4294967295")},
 	{"float", CLI_FLOAT_FPTR(float_func_ex),    HELP("e.g. float 9.87654")},
 	{"str",   CLI_STRING_FPTR(str_func_ex),     HELP("type str followed by your string")},
-	{"duck",   CLI_STRING_FPTR(duck_func_ex),   HELP("prints a duck")},
+	{"duck",  CLI_VOID_FPTR(duck_func_ex),      HELP("prints a duck")},
 
 	CLI_CMD_LIST_END                                             // must be LAST
 };
