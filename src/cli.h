@@ -16,9 +16,17 @@
 /**************************************************************************************************
 *                                             DEFINES
 *************************************************^************************************************/
+#ifndef CLI_MAX_LEN_CMD
 #define CLI_MAX_LEN_CMD          10    //Max length cmd name, including null terminator
+#endif
+
+#ifndef CLI_MAX_BUFF_LEN
 #define CLI_MAX_BUFF_LEN         255   //Max total length of command name and arguments/string input, including null terminator
+#endif
+
+#ifndef CLI_CMD_MAX_HELP_LENGTH
 #define CLI_CMD_MAX_HELP_LENGTH  64    //if this is zero, there will be no help
+#endif
 
 /*HELP*/
 #if CLI_CMD_MAX_HELP_LENGTH > 0
