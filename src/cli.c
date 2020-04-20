@@ -24,7 +24,7 @@
 //cli data
 static struct
 {
-	char buffer[CLI_MAX_BUFF_LEN];
+	char buffer[CLI_MAX_LEN_BUFF];
 	uint16_t buffer_ind;
 	char prev_cmd[CLI_MAX_LEN_CMD];
 
@@ -74,11 +74,7 @@ void cli_get_config_defaults(cli_conf_t *cli_conf)
 ******************************************************************************/
 void cli_init(cli_conf_t cli_conf)
 {
-	cli.conf.rx_byte_fptr    = cli_conf.rx_byte_fptr;
-	cli.conf.tx_string_fprt  = cli_conf.tx_string_fprt;
-	cli.conf.enable          = cli_conf.enable;
-	cli.conf.echo_enable     = cli_conf.echo_enable;
-	cli.conf.cmd_list        = cli_conf.cmd_list;
+	cli.conf    = cli_conf;
 
 	cli.prompt_sent_flag     = 0;
 	cli.num_cmds_added       = 0;
@@ -137,7 +133,7 @@ void cli_task(void)
 		{
 			//if exceed buffer length minus one for null terminator
 			//aways leave last null terminator
-			if(cli.buffer_ind >= CLI_MAX_BUFF_LEN - 1)
+			if(cli.buffer_ind >= CLI_MAX_LEN_BUFF - 1)
 			{
 				//reset buffer index
 				cli.buffer_ind = 0;
@@ -317,7 +313,7 @@ void cli_help_command(void)
 {
 	uint8_t cmd_ind;
 
-	char str[CLI_MAX_LEN_CMD + 1 + CLI_CMD_MAX_HELP_LENGTH + sizeof(CLI_NEW_LINE)];
+	char str[CLI_MAX_LEN_CMD + 1 + CLI_MAX_LEN_HELP_DESC + sizeof(CLI_NEW_LINE)];
 
 	for(cmd_ind = 0; cmd_ind < cli.num_cmds_added; cmd_ind++)
 	{

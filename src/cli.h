@@ -20,19 +20,19 @@
 #define CLI_MAX_LEN_CMD          10    //Max length cmd name, including null terminator
 #endif
 
-#ifndef CLI_MAX_BUFF_LEN
-#define CLI_MAX_BUFF_LEN         255   //Max total length of command name and arguments/string input, including null terminator
+#ifndef CLI_MAX_LEN_BUFF
+#define CLI_MAX_LEN_BUFF         255   //Max total length of command name and arguments/string input, including null terminator
 #endif
 
-#ifndef CLI_CMD_MAX_HELP_LENGTH
-#define CLI_CMD_MAX_HELP_LENGTH  64    //if this is zero, there will be no help
+#ifndef CLI_MAX_LEN_HELP_DESC
+#define CLI_MAX_LEN_HELP_DESC  64    //if this is zero, there will be no help
 #endif
 
 /*HELP*/
-#if CLI_CMD_MAX_HELP_LENGTH > 0
+#if CLI_MAX_LEN_HELP_DESC > 0
 #define HELP(x)  (x)
 #else
-#define HELP(x)	  0
+#define HELP(x)	 (0)
 #endif
 
 #define CLI_CMD_DELIMITER        " "   //Delimiters for tokens
@@ -92,11 +92,7 @@ typedef struct cli_command_t
 		void(*cmd_str)(const char *);
 	} fptr;
 
-#if CLI_CMD_MAX_HELP_LENGTH > 0
-	char help[CLI_CMD_MAX_HELP_LENGTH];     //Holds help string
-#else
-	uint8_t junk;
-#endif
+	char help[CLI_MAX_LEN_HELP_DESC + 1];     //Holds help string
 } cli_command_t;
 
 /*Function pointer macro for helping keep table clean
