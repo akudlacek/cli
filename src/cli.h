@@ -40,7 +40,7 @@
 #define CLI_NEW_LINE          "\r\n"   //New line thats used within cli
 
 /*CLI return status*/
-typedef enum
+typedef enum cli_return_t
 {
 	CLI_SUCESS,
 	CLI_FAIL_NULL_PARAM,
@@ -51,21 +51,21 @@ typedef enum
 } cli_return_t;
 
 /*CLI enable disable enum*/
-typedef enum
+typedef enum cli_enable_t
 {
 	CLI_DISABLED,
 	CLI_ENABLED
 } cli_enable_t;
 
 /*CLI echo enable disable enum*/
-typedef enum
+typedef enum cli_echo_enable_t
 {
 	CLI_ECHO_DISABLED,
 	CLI_ECHO_ENABLED
 } cli_echo_enable_t;
 
 /*Cli argument type*/
-typedef enum
+typedef enum cli_arg_type_t
 {
 	CLI_VOID,
 	CLI_INT,
@@ -76,7 +76,7 @@ typedef enum
 } cli_arg_type_t;
 
 /*Command configuration struct*/
-typedef struct
+typedef struct cli_command_t
 {
 	char command_name[CLI_MAX_LEN_CMD];     //holds command keyword
 	
@@ -116,7 +116,7 @@ typedef struct
 #define CLI_HELP_CMD_LIST_ENTRY {"help", CLI_VOID_FPTR(cli_help_command), HELP("Prints a list of available commands")}
 
 /*CLI configuration struct*/
-typedef	struct
+typedef	struct cli_conf_t
 {
 	int16_t (*rx_byte_fptr)(void);       //function pointer for received byte return -1 for no data or >=0 for ascii data
 	void (*tx_string_fprt)(const char*); //function pointer for transmit null terminated string
