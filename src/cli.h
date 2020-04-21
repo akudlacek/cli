@@ -16,6 +16,14 @@
 /**************************************************************************************************
 *                                             DEFINES
 *************************************************^************************************************/
+/* If you want to override these symbols without modifying source code you will have to add a
+ * symbol definition in the preprocessor settings. In VS 2019 if you wanted to make a change to
+ * CLI_MAX_LEN_HELP_DESC you would have to put CLI_MAX_LEN_HELP_DESC=0 in
+ * [Configuration Properties->C/C++->Preprocessor->Preprocessor Definitions]
+ * In Atmel Studio 7 add the same CLI_MAX_LEN_HELP_DESC=0 to the project properties
+ * [Properties->ARM/GNU C Compiler->Symbols->Defined symbols (-D)]
+ */
+
 #ifndef CLI_MAX_LEN_CMD
 #define CLI_MAX_LEN_CMD          10    //Max length cmd name, including null terminator
 #endif
@@ -25,19 +33,27 @@
 #endif
 
 #ifndef CLI_MAX_LEN_HELP_DESC
-#define CLI_MAX_LEN_HELP_DESC  64    //if this is zero, there will be no help
+#define CLI_MAX_LEN_HELP_DESC    64    //if this is zero, there will be no help description
+#endif
+
+#ifndef CLI_CMD_DELIMITER
+#define CLI_CMD_DELIMITER        " "   //Delimiters for tokens
+#endif
+
+#ifndef CLI_PROMPT
+#define CLI_PROMPT              "> "   //The prompt for user input
+#endif
+
+#ifndef CLI_NEW_LINE
+#define CLI_NEW_LINE          "\r\n"   //New line thats used within cli
 #endif
 
 /*HELP*/
 #if CLI_MAX_LEN_HELP_DESC > 0
 #define HELP(x)  (x)
 #else
-#define HELP(x)	 (0)
+#define HELP(x)	 {0} //need braces or will cause warning under GNU
 #endif
-
-#define CLI_CMD_DELIMITER        " "   //Delimiters for tokens
-#define CLI_PROMPT              "> "   //The prompt for user input
-#define CLI_NEW_LINE          "\r\n"   //New line thats used within cli
 
 /*CLI return status*/
 typedef enum cli_return_t
