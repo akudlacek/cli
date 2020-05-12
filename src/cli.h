@@ -29,7 +29,7 @@
 #endif
 
 #ifndef CLI_MAX_LEN_BUFF
-#define CLI_MAX_LEN_BUFF         255   //Max total length of command name and arguments/string input, including null terminator
+#define CLI_MAX_LEN_BUFF         256   //Max total length of command name and arguments/string input, including null terminator
 #endif
 
 #ifndef CLI_MAX_LEN_HELP_DESC
