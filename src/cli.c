@@ -373,45 +373,50 @@ int cli_strncpy(char *dest, size_t dest_size, const char *src, size_t src_size)
 }
 
 /******************************************************************************
-*  \brief CLI STRTOK_R
+*  \brief CLI STRTOK_R, Reentrant string tokenizer.
 *
-*  \note https://code.woboq.org/userspace/glibc/string/strtok_r.c.html
-* Reentrant string tokenizer.
+*  \note Taken from The GNU C Library (glibc)
+*        https://github.com/bminor/glibc/blob/master/string/strtok_r.c
+*       
 * Parse S into tokens separated by characters in DELIM.
-*   If S is NULL, the saved pointer in SAVE_PTR is used as
-*   the next starting point.  For example:
-*		char s[] = "-abc-=-def";
-*		char *sp;
-*		x = strtok_r(s, "-", &sp);        // x = "abc", sp = "=-def"
-*		x = strtok_r(NULL, "-=", &sp);        // x = "def", sp = NULL
-*		x = strtok_r(NULL, "=", &sp);        // x = NULL
-*				// s = "abc\0-def\0"
-*
+*  If S is NULL, the saved pointer in SAVE_PTR is used as
+*  the next starting point.  For example:
+*   char s[] = "-abc-=-def";
+*   char *sp;
+*   x = strtok_r(s, "-", &sp);	// x = "abc", sp = "=-def"
+*   x = strtok_r(NULL, "-=", &sp);	// x = "def", sp = NULL
+*   x = strtok_r(NULL, "=", &sp);	// x = NULL
+*      // s = "abc\0-def\0"
 ******************************************************************************/
 char * cli_strtok_r(char *s, const char *delim, char **save_ptr)
 {
 	char *end;
-	if(s == NULL)
-		s = *save_ptr;
-	if(*s == '\0')
+
+	if (s == NULL)
+	s = *save_ptr;
+
+	if (*s == '\0')
 	{
 		*save_ptr = s;
 		return NULL;
 	}
+
 	/* Scan leading delimiters.  */
-	s += strspn(s, delim);
-	if(*s == '\0')
+	s += strspn (s, delim);
+	if (*s == '\0')
 	{
 		*save_ptr = s;
 		return NULL;
 	}
+
 	/* Find the end of the token.  */
-	end = s + strcspn(s, delim);
-	if(*end == '\0')
+	end = s + strcspn (s, delim);
+	if (*end == '\0')
 	{
 		*save_ptr = end;
 		return s;
 	}
+
 	/* Terminate the token and make *SAVE_PTR point past it.  */
 	*end = '\0';
 	*save_ptr = end + 1;
