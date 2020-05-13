@@ -105,7 +105,7 @@ typedef struct cli_command_t
 		void(*cmd_int)(int);
 		void(*cmd_ulint)(unsigned long);
 		void(*cmd_float)(float);
-		void(*cmd_str)(const char *);
+		void(*cmd_str)(const char * const);
 	} fptr;
 
 	char help[CLI_MAX_LEN_HELP_DESC + 1];     //Holds help string
@@ -130,25 +130,25 @@ typedef struct cli_command_t
 /*CLI configuration struct*/
 typedef	struct cli_conf_t
 {
-	int16_t (*rx_byte_fptr)(void);       //function pointer for received byte return -1 for no data or >=0 for ascii data
-	void (*tx_string_fprt)(const char*); //function pointer for transmit null terminated string
-	cli_enable_t enable;                 //enables or disable cli
-	cli_echo_enable_t echo_enable;       //enables or disables echo
-	const cli_command_t *cmd_list;       //points list of commands
+	int16_t (*rx_byte_fptr)(void);              //function pointer for received byte return -1 for no data or >=0 for ascii data
+	void (*tx_string_fprt)(const char * const); //function pointer for transmit null terminated string
+	cli_enable_t enable;                        //enables or disable cli
+	cli_echo_enable_t echo_enable;              //enables or disables echo
+	const cli_command_t *cmd_list;              //points list of commands
 } cli_conf_t;
 
 
 /**************************************************************************************************
 *                                            PROTOTYPES
 *************************************************^************************************************/
-void cli_get_config_defaults(cli_conf_t *cli_conf);
-void cli_init(cli_conf_t cli_conf);
-void cli_task(void);
-void cli_enable(cli_enable_t enable);
-void cli_print(const char *null_term_str);
-void cli_help_command(void);
-int cli_strncpy(char *dest, size_t dest_size, const char *src, size_t src_size);
-char * cli_strtok_r(char *s, const char *delim, char **save_ptr);
+void   cli_get_config_defaults(cli_conf_t * const cli_conf);
+void   cli_init               (const cli_conf_t cli_conf);
+void   cli_task               (void);
+void   cli_enable             (const cli_enable_t enable);
+void   cli_print              (const char * const null_term_str);
+void   cli_help_command       (void);
+int    cli_strncpy            (char * const dest, const size_t dest_size, const char * const src, const size_t src_size);
+char * cli_strtok_r           (char *s, const char * const delim, char ** const save_ptr);
 
 
 #endif /* CLI_H_ */

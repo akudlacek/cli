@@ -58,7 +58,7 @@ static void default_tx_str(const char *str);
 *
 *  \note
 ******************************************************************************/
-void cli_get_config_defaults(cli_conf_t *cli_conf)
+void cli_get_config_defaults(cli_conf_t * const cli_conf)
 {
 	cli_conf->rx_byte_fptr    = default_rx_byte;
 	cli_conf->tx_string_fprt  = default_tx_str;
@@ -72,7 +72,7 @@ void cli_get_config_defaults(cli_conf_t *cli_conf)
 *
 *  \note Point to receive byte and transmit string functions
 ******************************************************************************/
-void cli_init(cli_conf_t cli_conf)
+void cli_init(const cli_conf_t cli_conf)
 {
 	cli.conf    = cli_conf;
 
@@ -282,7 +282,7 @@ void cli_task(void)
 *
 *  \note disables or enables cli task and cli print
 ******************************************************************************/
-void cli_enable(cli_enable_t enable)
+void cli_enable(const cli_enable_t enable)
 {
 	cli.conf.enable = enable;
 }
@@ -292,7 +292,7 @@ void cli_enable(cli_enable_t enable)
 *
 *  \note
 ******************************************************************************/
-void cli_print(const char *null_term_str)
+void cli_print(const char * const null_term_str)
 {
 	/*If cli is disabled do not run*/
 	if(cli.conf.enable == CLI_DISABLED) return;
@@ -328,7 +328,7 @@ void cli_help_command(void)
 *
 *  \note return -1 for err 0 for success
 ******************************************************************************/
-int cli_strncpy(char *dest, size_t dest_size, const char *src, size_t src_size)
+int cli_strncpy(char * const dest, const size_t dest_size, const char * const src, const size_t src_size)
 {
 	char *a = dest;
 	char *b = &dest[dest_size - 1];
@@ -388,7 +388,7 @@ int cli_strncpy(char *dest, size_t dest_size, const char *src, size_t src_size)
 *   x = strtok_r(NULL, "=", &sp);	// x = NULL
 *      // s = "abc\0-def\0"
 ******************************************************************************/
-char * cli_strtok_r(char *s, const char *delim, char **save_ptr)
+char * cli_strtok_r(char *s, const char * const delim, char ** const save_ptr)
 {
 	char *end;
 
