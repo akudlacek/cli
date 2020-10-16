@@ -17,11 +17,10 @@
 *                                             DEFINES
 *************************************************^************************************************/
 /* If you want to override these symbols without modifying source code you will have to add a
- * symbol definition in the preprocessor settings. In VS 2019 if you wanted to make a change to
- * CLI_MAX_LEN_HELP_DESC you would have to put CLI_MAX_LEN_HELP_DESC=0 in
- * [Configuration Properties->C/C++->Preprocessor->Preprocessor Definitions]
- * In Atmel Studio 7 add the same CLI_MAX_LEN_HELP_DESC=0 to the project properties
- * [Properties->ARM/GNU C Compiler->Symbols->Defined symbols (-D)]
+ * symbol definition in the preprocessor settings.
+ * In VS 2019        put DEFINE_OF_INTEREST=0 in [Configuration Properties->C/C++->Preprocessor->Preprocessor Definitions]
+ * In Atmel Studio 7 put DEFINE_OF_INTEREST=0 in [Properties->ARM/GNU C Compiler->Symbols->Defined symbols (-D)]
+ * In Code Blocks    put DEFINE_OF_INTEREST=0 in [Properties->Project's build options...->Compiler settings->#defines]
  */
 
 #ifndef CLI_MAX_LEN_CMD
