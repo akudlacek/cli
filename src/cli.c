@@ -46,7 +46,7 @@ static const cli_command_t default_cmd_list[1] =
 /**************************************************************************************************
 *                                         LOCAL PROTOTYPES
 *************************************************^************************************************/
-static int16_t default_rx_byte(void);
+static int16_t dflt_rx_byte(void);
 static void default_tx_str(const char *str);
 
 
@@ -60,7 +60,7 @@ static void default_tx_str(const char *str);
 ******************************************************************************/
 void cli_get_config_defaults(cli_conf_t * const cli_conf)
 {
-	cli_conf->rx_byte_fptr    = default_rx_byte;
+	cli_conf->rx_byte_fptr    = dflt_rx_byte;
 	cli_conf->tx_string_fprt  = default_tx_str;
 	cli_conf->enable          = CLI_ENABLED;
 	cli_conf->echo_enable     = CLI_ECHO_ENABLED;
@@ -432,7 +432,7 @@ char * cli_strtok_r(char *s, const char * const delim, char ** const save_ptr)
 *
 *  \note
 ******************************************************************************/
-static int16_t default_rx_byte(void)
+static int16_t dflt_rx_byte(void)
 {
 	return -1;
 }
