@@ -109,6 +109,7 @@ void cli_task(void)
 	/*Send prompt for CLI*/
 	if(cli.prompt_sent_flag == 0)
 	{
+		cli.conf.tx_string_fprt(CLI_NEW_LINE);
 		cli.conf.tx_string_fprt(CLI_PROMPT);
 		cli.prompt_sent_flag = 1;
 	}
@@ -144,7 +145,6 @@ void cli_task(void)
 				
 				cli.conf.tx_string_fprt(CLI_NEW_LINE); //These new lines need to stay on
 				cli.conf.tx_string_fprt("ERROR: COMMAND LENGTH");
-				cli.conf.tx_string_fprt(CLI_NEW_LINE); //These new lines need to stay on
 
 				/*Send prompt next pass*/
 				cli.prompt_sent_flag = 0;
@@ -183,8 +183,6 @@ void cli_task(void)
 		//if enter key pressed and buffer has some data
 		else if(((rx_byte == '\r') || (rx_byte == '\n')) && (cli.buffer_ind != 0))
 		{
-			cli.conf.tx_string_fprt(CLI_NEW_LINE);
-			
 			/*Send prompt next pass*/
 			cli.prompt_sent_flag = 0;
 
@@ -269,8 +267,6 @@ void cli_task(void)
 		//Put newline on empty enter press
 		else if((rx_byte == '\r') || (rx_byte == '\n'))
 		{
-			cli.conf.tx_string_fprt(CLI_NEW_LINE);
-
 			/*Send prompt next pass*/
 			cli.prompt_sent_flag = 0;
 		}
@@ -297,7 +293,6 @@ void cli_print(const char * const null_term_str)
 	/*If cli is disabled do not run*/
 	if(cli.conf.enable == CLI_DISABLED) return;
 	
-	cli.conf.tx_string_fprt(CLI_NEW_LINE);
 	cli.conf.tx_string_fprt(null_term_str);
 	
 	/*Send prompt next pass*/
