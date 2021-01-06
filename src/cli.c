@@ -30,7 +30,7 @@ static struct
 
 	char *cmd;
 	char *arg;
-	
+
 	cli_conf_t conf;
 	uint32_t num_cmds_added;
 
@@ -88,6 +88,9 @@ void cli_init(const cli_conf_t cli_conf)
 		//note: this will not check for null function pointers
 		cli.num_cmds_added++;
 	}
+
+	//Init terminal
+	cli.conf.tx_string_fprt(CLI_NEW_LINE);
 }
 
 /******************************************************************************
@@ -104,7 +107,7 @@ void cli_task(void)
 	int16_t rx_byte;
 	uint8_t cmd_ind = 0;
 	char *saveptr;
-	
+
 	/*If cli is disabled do not run*/
 	if(cli.conf.enable == CLI_DISABLED) return;
 
@@ -139,7 +142,7 @@ void cli_task(void)
 			if(cli.buffer_ind >= CLI_MAX_LEN_BUFF - 1)
 			{
 				cli_rx_buf_clr();
-				
+
 				cli.conf.tx_string_fprt(CLI_NEW_LINE); //These new lines need to stay on
 				cli.conf.tx_string_fprt("ERROR: COMMAND LENGTH");
 				cli.conf.tx_string_fprt(CLI_NEW_LINE);
@@ -163,7 +166,7 @@ void cli_task(void)
 			//remove one from local buffer
 			cli.buffer_ind--;
 			cli.buffer[cli.buffer_ind] = 0; //null terminate
-			
+
 			//send backspace
 			cli.conf.tx_string_fprt("\b");
 		}
@@ -173,7 +176,7 @@ void cli_task(void)
 		{
 			cli_strncpy(cli.buffer, sizeof(cli.buffer), cli.prev_cmd, sizeof(cli.prev_cmd)); //copy last valid command
 			cli.buffer_ind = (uint16_t)strlen(cli.prev_cmd);  //update index
-			
+
 			cli.conf.tx_string_fprt(cli.buffer);
 		}
 
@@ -189,7 +192,7 @@ void cli_task(void)
 
 			//get first token (command name)
 			cli.cmd = cli_strtok_r(cli.buffer, CLI_CMD_DELIMITER, &saveptr); //puts null at delimiter
-			
+
 			/*if the cmd tokens found, then search for a command*/
 			if(cli.cmd != NULL)
 			{
@@ -248,7 +251,7 @@ void cli_task(void)
 					}
 				}
 			}
-			
+
 			cli_rx_buf_clr();
 
 			//prints if no command found, when cmd_ind is past the end of the list of commands
@@ -259,7 +262,7 @@ void cli_task(void)
 				cli.conf.tx_string_fprt(CLI_NEW_LINE);
 			}
 		}
-		
+
 		//Put newline on empty enter press
 		else if((rx_byte == '\r') || (rx_byte == '\n'))
 		{
@@ -288,15 +291,27 @@ void cli_print(const char * const null_term_str)
 {
 	/*If cli is disabled do not run*/
 	if(cli.conf.enable == CLI_DISABLED) return;
-	
+
 	/*If prompt present advance below it so it does not look like user entered command*/
 	if(cli.prompt_sent_flag == 1)
 		cli.conf.tx_string_fprt(CLI_NEW_LINE);
 
 	cli.conf.tx_string_fprt(null_term_str);
-	
+
 	/*Send prompt next pass*/
 	cli.prompt_sent_flag = 0;
+}
+
+/******************************************************************************
+*  \brief CLI print message with new line
+*
+*  \note
+******************************************************************************/
+void cli_print_nl(const char* const null_term_str)
+{
+	cli_print(null_term_str);
+
+	cli.conf.tx_string_fprt(CLI_NEW_LINE);
 }
 
 /******************************************************************************
@@ -372,7 +387,7 @@ int cli_strncpy(char * const dest, const size_t dest_size, const char * const sr
 *
 *  \note Taken from The GNU C Library (glibc)
 *        https://github.com/bminor/glibc/blob/master/string/strtok_r.c
-*       
+*
 * Parse S into tokens separated by characters in DELIM.
 *  If S is NULL, the saved pointer in SAVE_PTR is used as
 *  the next starting point.  For example:

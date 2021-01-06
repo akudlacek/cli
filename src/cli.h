@@ -145,6 +145,7 @@ void   cli_init               (const cli_conf_t cli_conf);
 void   cli_task               (void);
 void   cli_enable             (const cli_enable_t enable);
 void   cli_print              (const char * const null_term_str);
+void   cli_print_nl           (const char* const null_term_str);
 void   cli_help_command       (void);
 int    cli_strncpy            (char * const dest, const size_t dest_size, const char * const src, const size_t src_size);
 char * cli_strtok_r           (char *s, const char * const delim, char ** const save_ptr);
