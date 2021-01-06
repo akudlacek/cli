@@ -24,11 +24,13 @@ static void ulint_func_ex(unsigned long arg);
 static void float_func_ex(float arg);
 static void str_func_ex(const char *arg);
 static void duck_func_ex(void);
+static void cli_error_test(void);
 
 static void cmd_line_init(void);
 
 static int16_t rx_byte_wrapper(void);
 static void tx_string_wrapper(const char *string_ptr);
+static int16_t inj_rx_byte_wrapper(void);
 
 
 /**************************************************************************************************
@@ -50,16 +52,20 @@ static const cli_command_t cli_cmd_list[] =
 	//cmd name, fptr, help string
 	CLI_HELP_CMD_LIST_ENTRY,
 
-	{"void",  CLI_VOID_FPTR(void_func_ex),      HELP("void just runs the function")},
-	{"int",   CLI_INT_FPTR(int_func_ex),        HELP("e.g. int -4")},
-	{"uint8", CLI_UINT8_FPTR(uint8_func_ex),    HELP("e.g. uint8_t 200")},
-	{"ulint", CLI_ULINT_FPTR(ulint_func_ex),    HELP("e.g. unsigned long 4294967295")},
-	{"float", CLI_FLOAT_FPTR(float_func_ex),    HELP("e.g. float 9.87654")},
-	{"str",   CLI_STRING_FPTR(str_func_ex),     HELP("type str followed by your string")},
-	{"duck",  CLI_VOID_FPTR(duck_func_ex),      HELP("prints a duck")},
+	{"void",   CLI_VOID_FPTR(void_func_ex),      HELP("void just runs the function")},
+	{"int",    CLI_INT_FPTR(int_func_ex),        HELP("e.g. int -4")},
+	{"uint8",  CLI_UINT8_FPTR(uint8_func_ex),    HELP("e.g. uint8_t 200")},
+	{"ulint",  CLI_ULINT_FPTR(ulint_func_ex),    HELP("e.g. unsigned long 4294967295")},
+	{"float",  CLI_FLOAT_FPTR(float_func_ex),    HELP("e.g. float 9.87654")},
+	{"str",    CLI_STRING_FPTR(str_func_ex),     HELP("type str followed by your string")},
+	{"duck",   CLI_VOID_FPTR(duck_func_ex),      HELP("prints a duck")},
+	{"errtst", CLI_VOID_FPTR(cli_error_test),    HELP("test all error messages")},
+	{"null",   CLI_VOID_FPTR(NULL),              HELP("null function for testing")},
 
 	CLI_CMD_LIST_END                                             // must be LAST
 };
+
+static int16_t inj_rx_byte = 0;
 
 
 /**************************************************************************************************
@@ -192,6 +198,56 @@ static void duck_func_ex(void)
 }
 
 /******************************************************************************
+*  \brief
+*
+*  \note
+******************************************************************************/
+static void cli_error_test(void)
+{
+	uint32_t i;
+	char null_cmd[] = "null\r";
+	
+	cli_conf_t cli_conf;
+
+	//Init but inject rx byte
+	cli_get_config_defaults(&cli_conf);
+	cli_conf.rx_byte_fptr = inj_rx_byte_wrapper; //changed
+	cli_conf.tx_string_fprt = tx_string_wrapper;
+	cli_conf.enable = CLI_ENABLED;
+	cli_conf.echo_enable = CLI_ECHO_ENABLED; //changed
+	cli_conf.cmd_list = cli_cmd_list;
+	cli_init(cli_conf);
+
+	/*Command length error test*/
+	cli_print("The following should display a command length error");
+	inj_rx_byte = 's'; //set rx byte to some garbage
+	//run task and rx more than command buffer can hold
+	for(i = 0; i < CLI_MAX_LEN_BUFF; i++)
+	{
+		cli_task();
+	}
+	cli_rx_buf_clr();
+
+	/*No command found error test*/
+	cli_print("The following should display a no command found error");
+	cli_task();
+	inj_rx_byte = '\r';
+	cli_task();
+
+	/*Null function pointer error test*/
+	cli_print("The following should display a null function pointer error");
+	for(i = 0; i < sizeof(null_cmd); i++)
+	{
+		inj_rx_byte = null_cmd[i];
+		cli_task();
+	}
+
+	//return to normal init
+	cli_print("Error message test complete");
+	cmd_line_init();
+}
+
+/******************************************************************************
 *  \brief Init all commands to be used in CLI
 *
 *  \note
@@ -241,4 +297,14 @@ static int16_t rx_byte_wrapper(void)
 static void tx_string_wrapper(const char *string_ptr)
 {
 	printf("%s", string_ptr);
+}
+
+/******************************************************************************
+*  \brief Injection RX BYTE
+*
+*  \note use inj_rx_byte variable to inject
+******************************************************************************/
+static int16_t inj_rx_byte_wrapper(void)
+{
+	return inj_rx_byte;
 }

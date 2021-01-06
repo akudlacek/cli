@@ -78,6 +78,8 @@ void cli_init(const cli_conf_t cli_conf)
 
 	cli.prompt_sent_flag     = 0;
 	cli.num_cmds_added       = 0;
+	cli_rx_buf_clr();
+	memset(cli.prev_cmd, 0, sizeof(cli.prev_cmd));
 
 	//Count number of commands in list
 	//looks for first null in first char of string of the command name
@@ -136,15 +138,11 @@ void cli_task(void)
 			//aways leave last null terminator
 			if(cli.buffer_ind >= CLI_MAX_LEN_BUFF - 1)
 			{
-				//reset buffer index
-				cli.buffer_ind = 0;
-				 //necessary to clear whole buffer because there could be garbage after the
-				 //cmd name entry that can be interpreted as an argument input
-				 //this also null terminates
-				memset(cli.buffer, 0, sizeof(cli.buffer));
+				cli_rx_buf_clr();
 				
 				cli.conf.tx_string_fprt(CLI_NEW_LINE); //These new lines need to stay on
 				cli.conf.tx_string_fprt("ERROR: COMMAND LENGTH");
+				cli.conf.tx_string_fprt(CLI_NEW_LINE);
 
 				/*Send prompt next pass*/
 				cli.prompt_sent_flag = 0;
@@ -183,6 +181,9 @@ void cli_task(void)
 		//if enter key pressed and buffer has some data
 		else if(((rx_byte == '\r') || (rx_byte == '\n')) && (cli.buffer_ind != 0))
 		{
+			//New line to advance the text below the last entered command
+			cli.conf.tx_string_fprt(CLI_NEW_LINE);
+
 			/*Send prompt next pass*/
 			cli.prompt_sent_flag = 0;
 
@@ -248,12 +249,7 @@ void cli_task(void)
 				}
 			}
 			
-			//reset buffer index
-			cli.buffer_ind = 0;
-			//necessary to clear whole buffer because there could be garbage after the
-			//cmd name entry that can be interpreted as an argument input
-			//this also null terminates
-			memset(cli.buffer, 0, sizeof(cli.buffer));
+			cli_rx_buf_clr();
 
 			//prints if no command found, when cmd_ind is past the end of the list of commands
 			if(cmd_ind == cli.num_cmds_added)
@@ -293,6 +289,10 @@ void cli_print(const char * const null_term_str)
 	/*If cli is disabled do not run*/
 	if(cli.conf.enable == CLI_DISABLED) return;
 	
+	/*If prompt present advance below it so it does not look like user entered command*/
+	if(cli.prompt_sent_flag == 1)
+		cli.conf.tx_string_fprt(CLI_NEW_LINE);
+
 	cli.conf.tx_string_fprt(null_term_str);
 	
 	/*Send prompt next pass*/
@@ -418,6 +418,21 @@ char * cli_strtok_r(char *s, const char * const delim, char ** const save_ptr)
 	return s;
 }
 
+/******************************************************************************
+*  \brief CLI RX buffer clear
+*
+*  \note Clears any received characters
+******************************************************************************/
+void cli_rx_buf_clr(void)
+{
+	//reset buffer index
+	cli.buffer_ind = 0;
+	//necessary to clear whole buffer because there could be garbage after the
+	//cmd name entry that can be interpreted as an argument input
+	//this also null terminates
+	memset(cli.buffer, 0, sizeof(cli.buffer));
+}
+
 
 /**************************************************************************************************
 *                                         LOCAL FUNCTIONS
@@ -441,4 +456,3 @@ static void default_tx_str(const char *str)
 {
 	//empty
 }
-

@@ -148,6 +148,7 @@ void   cli_print              (const char * const null_term_str);
 void   cli_help_command       (void);
 int    cli_strncpy            (char * const dest, const size_t dest_size, const char * const src, const size_t src_size);
 char * cli_strtok_r           (char *s, const char * const delim, char ** const save_ptr);
+void   cli_rx_buf_clr         (void);
 
 
 #endif /* CLI_H_ */
