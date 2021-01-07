@@ -280,6 +280,9 @@ void cli_task(void)
 void cli_enable(const cli_enable_t enable)
 {
 	cli.conf.enable = enable;
+
+	/*Send prompt next pass*/
+	cli.prompt_sent_flag = 0;
 }
 
 /******************************************************************************
