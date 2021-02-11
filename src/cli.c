@@ -90,7 +90,7 @@ void cli_init(const cli_conf_t cli_conf)
 	}
 
 	//Init terminal
-	cli.conf.tx_string_fprt(CLI_NEW_LINE);
+	cli_print_nl("");
 }
 
 /******************************************************************************
@@ -314,7 +314,7 @@ void cli_print_nl(const char* const null_term_str)
 {
 	cli_print(null_term_str);
 
-	cli.conf.tx_string_fprt(CLI_NEW_LINE);
+	cli_print(CLI_NEW_LINE);
 }
 
 /******************************************************************************
@@ -331,8 +331,8 @@ void cli_help_command(void)
 	for(cmd_ind = 0; cmd_ind < cli.num_cmds_added; cmd_ind++)
 	{
 		//prints command name
-		snprintf(str, sizeof(str), "%-*s %s%s", CLI_MAX_LEN_CMD, cli.conf.cmd_list[cmd_ind].command_name, cli.conf.cmd_list[cmd_ind].help, CLI_NEW_LINE);
-		cli.conf.tx_string_fprt(str);
+		snprintf(str, sizeof(str), "%-*s %s", CLI_MAX_LEN_CMD, cli.conf.cmd_list[cmd_ind].command_name, cli.conf.cmd_list[cmd_ind].help);
+		cli_print_nl(str);
 	}
 }
 
