@@ -216,25 +216,22 @@ void cli_task(void)
 							//run command based on type
 							switch(cli.conf.cmd_list[cmd_ind].arg_type)
 							{
-								if(cli.arg != NULL) //to prevent illegal mem access
-								{
-									case CLI_INT:
-									arg_int = atoi(cli.arg);
-									cli.conf.cmd_list[cmd_ind].fptr.cmd_int(arg_int);
-									break;
-									case CLI_UINT8:
-									arg_int = atoi(cli.arg);
-									cli.conf.cmd_list[cmd_ind].fptr.cmd_uint8((uint8_t)arg_int);
-									break;
-									case CLI_ULINT:
-									arg_ulint = strtoul(cli.arg, NULL, 0);
-									cli.conf.cmd_list[cmd_ind].fptr.cmd_ulint(arg_ulint);
-									break;
-									case CLI_FLOAT:
-									arg_float = (float)atof(cli.arg);
-									cli.conf.cmd_list[cmd_ind].fptr.cmd_float(arg_float);
-									break;
-								}
+								case CLI_INT:
+								arg_int = atoi(cli.arg);
+								cli.conf.cmd_list[cmd_ind].fptr.cmd_int(arg_int);
+								break;
+								case CLI_UINT8:
+								arg_int = atoi(cli.arg);
+								cli.conf.cmd_list[cmd_ind].fptr.cmd_uint8((uint8_t)arg_int);
+								break;
+								case CLI_ULINT:
+								arg_ulint = strtoul(cli.arg, NULL, 0);
+								cli.conf.cmd_list[cmd_ind].fptr.cmd_ulint(arg_ulint);
+								break;
+								case CLI_FLOAT:
+								arg_float = (float)atof(cli.arg);
+								cli.conf.cmd_list[cmd_ind].fptr.cmd_float(arg_float);
+								break;
 								case CLI_STRING:
 								cli.conf.cmd_list[cmd_ind].fptr.cmd_str(cli.arg);
 								break;

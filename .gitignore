@@ -1,2 +1,9 @@
+# for visual studio
 /Debug
 /Release
+
+# for code blocks
+/obj
+/bin
+*.layout
+*.depend
