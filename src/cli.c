@@ -216,31 +216,32 @@ void cli_task(void)
 							//run command based on type
 							switch(cli.conf.cmd_list[cmd_ind].arg_type)
 							{
-								if(cli.arg != NULL) //to prevent illegal mem access
-								{
-									case CLI_INT:
+								case CLI_INT:
+									if(cli.arg == NULL) break; //to prevent illegal mem access
 									arg_int = atoi(cli.arg);
 									cli.conf.cmd_list[cmd_ind].fptr.cmd_int(arg_int);
 									break;
-									case CLI_UINT8:
+								case CLI_UINT8:
+									if(cli.arg == NULL) break; //to prevent illegal mem access
 									arg_int = atoi(cli.arg);
 									cli.conf.cmd_list[cmd_ind].fptr.cmd_uint8((uint8_t)arg_int);
 									break;
-									case CLI_ULINT:
+								case CLI_ULINT:
+									if(cli.arg == NULL) break; //to prevent illegal mem access
 									arg_ulint = strtoul(cli.arg, NULL, 0);
 									cli.conf.cmd_list[cmd_ind].fptr.cmd_ulint(arg_ulint);
 									break;
-									case CLI_FLOAT:
+								case CLI_FLOAT:
+									if(cli.arg == NULL) break; //to prevent illegal mem access
 									arg_float = (float)atof(cli.arg);
 									cli.conf.cmd_list[cmd_ind].fptr.cmd_float(arg_float);
 									break;
-								}
 								case CLI_STRING:
-								cli.conf.cmd_list[cmd_ind].fptr.cmd_str(cli.arg);
-								break;
+									cli.conf.cmd_list[cmd_ind].fptr.cmd_str(cli.arg);
+									break;
 								default:
-								cli.conf.cmd_list[cmd_ind].fptr.cmd_void();
-								break;
+									cli.conf.cmd_list[cmd_ind].fptr.cmd_void();
+									break;
 							}
 
 							//records previous command for tab complete
