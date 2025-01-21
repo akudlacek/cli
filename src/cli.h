@@ -8,6 +8,9 @@
 #ifndef CLI_H_
 #define CLI_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -151,5 +154,8 @@ int    cli_strncpy            (char * const dest, const size_t dest_size, const 
 char * cli_strtok_r           (char *s, const char * const delim, char ** const save_ptr);
 void   cli_rx_buf_clr         (void);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* CLI_H_ */
